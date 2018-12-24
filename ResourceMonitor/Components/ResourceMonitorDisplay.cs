@@ -8,10 +8,12 @@ namespace ResourceMonitor
 {
     /**
     * Component that contains drawing to the frame in world space.
-    * Alot of the drawing ui code is from https://github.com/RandyKnapp/
+    * Create canvas code is from https://github.com/RandyKnapp/
     */
     public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IEventSystemHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        private const int ITEMS_PER_PAGE = 8;
+
         private ResourceMonitorLogic rml;
         private Canvas canvas;
         private GameObject ui;
@@ -51,32 +53,38 @@ namespace ResourceMonitor
         {
         }
 
-        public void ItemModified(InventoryItem item, uint newQuantity)
+        public void ItemModified(TechType item, int newQuantity)
         {
-            TechType itemTechType = item.item.GetTechType();
             if (newQuantity <= 0)
             {
-                Destroy(itemDisplayElements[itemTechType]);
-                itemDisplayElements.Remove(itemTechType);
-                return;
-            }
-
-            if (itemDisplayElements.ContainsKey(itemTechType))
-            {
-                itemDisplayElements[itemTechType].GetComponentInChildren<Text>().text = "x" + newQuantity;
+                Destroy(itemDisplayElements[item]);
+                itemDisplayElements.Remove(item);
             }
             else
             {
-                GameObject itemDisplay = Instantiate(EntryPoint.ResourceMonitorDisplayItemUIPrefab);
-                itemDisplay.transform.SetParent(itemGrid.transform, false);
-                itemDisplay.GetComponentInChildren<Text>().text = "x" + newQuantity;
+                if (itemDisplayElements.ContainsKey(item))
+                {
+                    itemDisplayElements[item].GetComponentInChildren<Text>().text = "x" + newQuantity;
+                }
+                else
+                {
+                    GameObject itemDisplay = Instantiate(EntryPoint.ResourceMonitorDisplayItemUIPrefab);
+                    itemDisplay.transform.SetParent(itemGrid.transform, false);
+                    itemDisplay.GetComponentInChildren<Text>().text = "x" + newQuantity;
 
-                var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
-                icon.sprite = SpriteManager.Get(itemTechType);
-                icon.SetAllDirty();
+                    var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
+                    icon.sprite = SpriteManager.Get(item);
+                    icon.SetAllDirty();
 
-                itemDisplayElements.Add(itemTechType, itemDisplay);
+                    itemDisplayElements.Add(item, itemDisplay);
+                }
             }
+
+            UpdatePaginator();
+        }
+
+        private void UpdatePaginator()
+        {
         }
 
         private void CreateCanvas(Transform parent)

@@ -14,7 +14,7 @@ namespace ResourceMonitor
     {
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase = null;
-        private Dictionary<TechType, uint> trackedResources = new Dictionary<TechType, uint>();
+        private Dictionary<TechType, int> trackedResources = new Dictionary<TechType, int>();
 
         public bool CanDeconstruct(out string reason)
         {
@@ -57,43 +57,46 @@ namespace ResourceMonitor
 
             foreach (StorageContainer sc in seaBase.GetComponentsInChildren<StorageContainer>())
             {
-                sc.container.onAddItem += ItemAddedToTrackedLocker;
-                sc.container.onRemoveItem += ItemRemovedFromTrackedLocker;
+                foreach (var item in sc.container.GetItemTypes())
+                {
+                    AddItemsToTracker(item, sc.container.GetCount(item));
+                }
+
+                sc.container.onAddItem += (item) => AddItemsToTracker(item.item.GetTechType());
+                sc.container.onRemoveItem += (item) => RemoveItemsFromTracker(item.item.GetTechType());
+            }
+        }
+
+        private void AddItemsToTracker(TechType item, int amountToAdd = 1)
+        {
+            if (trackedResources.ContainsKey(item))
+            {
+                trackedResources[item] = trackedResources[item] + amountToAdd;
+            }
+            else
+            {
+                trackedResources.Add(item, amountToAdd);
+            }
+
+            rmd?.ItemModified(item, trackedResources[item]);
+        }
+
+        private void RemoveItemsFromTracker(TechType item, int amountToRemove = 1)
+        {
+            if (trackedResources.ContainsKey(item))
+            {
+                trackedResources[item] = trackedResources[item] - amountToRemove;
+                rmd?.ItemModified(item, trackedResources[item]);
+
+                if (trackedResources[item] <= 0)
+                {
+                    trackedResources.Remove(item);
+                }
             }
         }
 
         public void OnPointerClick()
         {
-        }
-
-        private void ItemAddedToTrackedLocker(InventoryItem item)
-        {
-            TechType itemTechType = item.item.GetTechType();
-            if (trackedResources.ContainsKey(item.item.GetTechType()))
-            {
-                trackedResources[itemTechType] = trackedResources[itemTechType] + 1;
-            }
-            else
-            {
-                trackedResources.Add(itemTechType, 1);
-            }
-
-            rmd?.ItemModified(item, trackedResources[itemTechType]);
-        }
-
-        private void ItemRemovedFromTrackedLocker(InventoryItem item)
-        {
-            TechType itemTechType = item.item.GetTechType();
-            if (trackedResources.ContainsKey(itemTechType))
-            {
-                trackedResources[itemTechType] = trackedResources[itemTechType] - 1;
-                if (trackedResources[itemTechType] <= 0)
-                {
-                    trackedResources.Remove(itemTechType);
-                }
-
-                rmd?.ItemModified(item, trackedResources[itemTechType]);
-            }
         }
     }
 }
