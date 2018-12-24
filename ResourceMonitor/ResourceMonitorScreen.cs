@@ -11,8 +11,8 @@ namespace ResourceMonitor
     public class ResourceMonitorScreen : Buildable
     {
         public static ResourceMonitorScreen Singleton { get; } = new ResourceMonitorScreen();
-   
-        public override string AssetsFolder => "ResourceMonitor/Assets";
+
+        public override string AssetsFolder => EntryPoint.AssetsFolderLocation;
         public override TechGroup GroupForPDA => TechGroup.InteriorModules;
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
         public override string IconFileName => "ResourceMonitor.png";
@@ -26,6 +26,7 @@ namespace ResourceMonitor
         {
             GameObject go = Object.Instantiate(Resources.Load<GameObject>("Submarine/Build/PictureFrame"));
             go.name = "ResourceMonitor";
+            go.transform.localScale = new Vector3(2f, 2f, 1f);
             Object.DestroyImmediate(go.GetComponentInChildren<PictureFrame>());
             ResourceMonitorLogic rml = go.AddComponent<ResourceMonitorLogic>();
             return go;

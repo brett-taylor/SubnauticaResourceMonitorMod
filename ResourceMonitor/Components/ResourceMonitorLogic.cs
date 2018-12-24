@@ -14,12 +14,7 @@ namespace ResourceMonitor
     {
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase = null;
-        public Dictionary<TechType, uint> TrackedResources { private set; get; }
-
-        public void Awake()
-        {
-            TrackedResources = new Dictionary<TechType, uint>();
-        }
+        private Dictionary<TechType, uint> trackedResources = new Dictionary<TechType, uint>();
 
         public bool CanDeconstruct(out string reason)
         {
@@ -69,35 +64,35 @@ namespace ResourceMonitor
 
         public void OnPointerClick()
         {
-            foreach (TechType itemTechType in TrackedResources.Keys)
-            {
-                ErrorMessage.AddMessage(string.Format("{0} amount {1}", itemTechType, TrackedResources[itemTechType]));
-            }
         }
 
         private void ItemAddedToTrackedLocker(InventoryItem item)
         {
             TechType itemTechType = item.item.GetTechType();
-            if (TrackedResources.ContainsKey(item.item.GetTechType()))
+            if (trackedResources.ContainsKey(item.item.GetTechType()))
             {
-                TrackedResources[itemTechType] = TrackedResources[itemTechType] + 1;
+                trackedResources[itemTechType] = trackedResources[itemTechType] + 1;
             }
             else
             {
-                TrackedResources.Add(itemTechType, 1);
+                trackedResources.Add(itemTechType, 1);
             }
+
+            rmd?.ItemModified(item, trackedResources[itemTechType]);
         }
 
         private void ItemRemovedFromTrackedLocker(InventoryItem item)
         {
             TechType itemTechType = item.item.GetTechType();
-            if (TrackedResources.ContainsKey(itemTechType))
+            if (trackedResources.ContainsKey(itemTechType))
             {
-                TrackedResources[itemTechType] = TrackedResources[itemTechType] - 1;
-                if (TrackedResources[itemTechType] <= 0)
+                trackedResources[itemTechType] = trackedResources[itemTechType] - 1;
+                if (trackedResources[itemTechType] <= 0)
                 {
-                    TrackedResources.Remove(itemTechType);
+                    trackedResources.Remove(itemTechType);
                 }
+
+                rmd?.ItemModified(item, trackedResources[itemTechType]);
             }
         }
     }
