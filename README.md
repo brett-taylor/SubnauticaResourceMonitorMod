@@ -13,6 +13,7 @@ Two new items:
 * Allow users to pick up a item by looking at it on the screen. This should take it from a locker that contains that item.
 * Add an options system with saving/loading to toggle the picking up feature.
 * New screen model would be good.
+* Nicer looking ui
 
 #### Libraries
 * QModManager
