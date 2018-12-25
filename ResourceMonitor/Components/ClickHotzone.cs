@@ -9,6 +9,8 @@ namespace ResourceMonitor
     */
     public class ClickHotzone : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        public string HoveredMessage { get; set; }
+        public string HoveredSubMessage { get; set; }
         public event Action OnPointerClickedEvent;
         public event Action OnPointerEnteredEvent;
         public event Action OnPointerExitedEvent;

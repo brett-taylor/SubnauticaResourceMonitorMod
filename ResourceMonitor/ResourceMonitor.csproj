@@ -36,6 +36,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>E:\Subnautica\Subnautica_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>E:\Subnautica\Subnautica_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
     <Reference Include="SMLHelper">
       <HintPath>E:\Subnautica\QMods\Modding Helper\SMLHelper.dll</HintPath>
     </Reference>

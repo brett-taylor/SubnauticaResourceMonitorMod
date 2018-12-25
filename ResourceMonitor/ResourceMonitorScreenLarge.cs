@@ -17,6 +17,7 @@ namespace ResourceMonitor
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
         public override string IconFileName => "ResourceMonitorLarge.png";
         public override TechType RequiredForUnlock => TechType.None;
+        public override string HandOverText => "Test Test Test 5";
 
         protected ResourceMonitorScreenLarge() : base("ResourceMonitorBuildableLarge", "Resource Monitor Screen Large", "Track how many resources you have stored away in your sea base on one handy large screen.")
         {
@@ -24,10 +25,11 @@ namespace ResourceMonitor
 
         public override GameObject GetGameObject()
         {
-            GameObject go = Object.Instantiate(Resources.Load<GameObject>("Submarine/Build/PictureFrame"));
+            GameObject go = Object.Instantiate(CraftData.GetPrefabForTechType(TechType.PictureFrame));
             go.name = "ResourceMonitor";
             go.transform.localScale = new Vector3(2f, 2f, 1f);
             Object.DestroyImmediate(go.GetComponentInChildren<PictureFrame>());
+            Object.DestroyImmediate(go.GetComponentInChildren<GenericHandTarget>());
             ResourceMonitorLogic rml = go.AddComponent<ResourceMonitorLogic>();
             return go;
         }
@@ -35,7 +37,7 @@ namespace ResourceMonitor
         protected override TechData GetBlueprintRecipe()
         {
             List<Ingredient> ingredients = new List<Ingredient>();
-            ingredients.Add(new Ingredient(TechType.PictureFrame, 2));
+            ingredients.Add(new Ingredient(TechType.Glass, 2));
             ingredients.Add(new Ingredient(TechType.ComputerChip, 2));
             ingredients.Add(new Ingredient(TechType.AdvancedWiringKit, 2));
 

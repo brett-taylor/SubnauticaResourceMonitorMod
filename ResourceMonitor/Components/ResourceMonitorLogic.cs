@@ -94,9 +94,5 @@ namespace ResourceMonitor
                 rmd?.ItemModified(item, newQuantity);
             }
         }
-
-        public void OnPointerClick()
-        {
-        }
     }
 }

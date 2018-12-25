@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ResourceMonitor
@@ -11,20 +10,24 @@ namespace ResourceMonitor
     * Component that contains drawing to the frame in world space.
     * Create canvas code is from https://github.com/RandyKnapp/
     */
-    public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IEventSystemHandler, IPointerEnterHandler, IPointerExitHandler
+    public class ResourceMonitorDisplay : MonoBehaviour
     {
         private const int ITEMS_PER_PAGE = 12;
+        private const float MAX_INTERACTION_DISTANCE = 2f;
+
         private ResourceMonitorLogic rml;
         private Dictionary<TechType, GameObject> trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
         private int currentPage;
         private int maxPage;
-
         private Canvas canvas;
         private GameObject ui;
         private GameObject itemGrid;
         private GameObject prevPage;
         private GameObject nextPage;
         private GameObject pageCounter;
+        private Text prevPageText;
+        private Text nextPageText;
+        private ClickHotzone activeClickHotzone = null;
 
         public void Setup(Transform parent, ResourceMonitorLogic rml)
         {
@@ -37,25 +40,36 @@ namespace ResourceMonitor
             ui.GetComponent<RectTransform>().localScale = new Vector3(0.01f, 0.01f, 1f);
             itemGrid = ui.transform.Find("ItemGridBackground").gameObject;
 
-            prevPage = ui.transform.Find("PreviousPage").gameObject;
-            nextPage = ui.transform.Find("NextPage").gameObject;
-            pageCounter = ui.transform.Find("PageCounter").gameObject;
-
-            Text prevPageText = prevPage.GetComponent<Text>();
-            Text nextPageText = nextPage.GetComponent<Text>();
-            ClickHotzone prevPageClickZone = prevPage.AddComponent<ClickHotzone>();
-            ClickHotzone nextPageClickZone = nextPage.AddComponent<ClickHotzone>();
-            prevPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(prevPageText);
-            nextPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(nextPageText);
-            prevPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(prevPageText);
-            nextPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(nextPageText);
-            prevPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(prevPageText, currentPage - 1);
-            nextPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(nextPageText, currentPage + 1);
-
+            FindRequiredUIElements();
+            InitialiseClickHotzones();
             FinalSetup();
         }
 
-        // To be called always after the display is done creating all other objects it needs.
+        private void FindRequiredUIElements()
+        {
+            prevPage = ui.transform.Find("PreviousPage").gameObject;
+            nextPage = ui.transform.Find("NextPage").gameObject;
+            prevPageText = prevPage.GetComponent<Text>();
+            nextPageText = nextPage.GetComponent<Text>();
+            pageCounter = ui.transform.Find("PageCounter").gameObject;
+        }
+
+        private void InitialiseClickHotzones()
+        {
+            ClickHotzone prevPageClickZone = prevPage.AddComponent<ClickHotzone>();
+            prevPageClickZone.HoveredMessage = "Previous Page";
+
+            ClickHotzone nextPageClickZone = nextPage.AddComponent<ClickHotzone>();
+            nextPageClickZone.HoveredMessage = "Next Page";
+
+            prevPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(prevPageText, prevPageClickZone);
+            nextPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(nextPageText, nextPageClickZone);
+            prevPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(prevPageText);
+            nextPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(nextPageText);
+            prevPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(prevPageText, currentPage - 1, prevPageClickZone);
+            nextPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(nextPageText, currentPage + 1, nextPageClickZone);
+        }
+
         private void FinalSetup()
         {
             currentPage = 1;
@@ -66,56 +80,23 @@ namespace ResourceMonitor
 
         public void Destroy()
         {
+            activeClickHotzone = null;
             trackedResourcesDisplayElements.Clear();
             trackedResourcesDisplayElements = null;
             Destroy(canvas);
             canvas = null;
         }
 
-        public void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                DrawPage(currentPage - 1);
-            }
-            else if (Input.GetKeyDown(KeyCode.P))
-            {
-                DrawPage(currentPage + 1);
-            }
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            rml.OnPointerClick();
-        }
-
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-        }
-
         public void ItemModified(TechType type, int newQuantity)
         {
-            if (newQuantity > 0)
+            if (newQuantity > 0 && trackedResourcesDisplayElements.ContainsKey(type))
             {
-                if (trackedResourcesDisplayElements.ContainsKey(type))
-                {
-                    trackedResourcesDisplayElements[type].GetComponentInChildren<Text>().text = "x" + newQuantity;
-                }
-                else
-                {
-                    // TO:DO If were meant to show it right now redraw that page.
-                    // If we are not meant to show it right now at least execute UpdatePaginator();
-                    DrawPage(currentPage);
-                }
+                trackedResourcesDisplayElements[type].GetComponentInChildren<Text>().text = "x" + newQuantity;
+                trackedResourcesDisplayElements[type].GetComponentInChildren<ClickHotzone>().HoveredSubMessage = "x" + newQuantity;
+                return;
             }
-            else
-            {
-                DrawPage(currentPage);
-            }
+
+            DrawPage(currentPage);
         }
 
         private void CalculateNewMaxPages()
@@ -172,8 +153,14 @@ namespace ResourceMonitor
             itemDisplay.transform.SetParent(itemGrid.transform, false);
             itemDisplay.GetComponentInChildren<Text>().text = "x" + amount;
 
-            var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
+            uGUI_Icon icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
             icon.sprite = SpriteManager.Get(type);
+
+            ClickHotzone clickHotzone = itemDisplay.AddComponent<ClickHotzone>();
+            clickHotzone.HoveredMessage = TechTypeExtensions.Get(Language.main, type);
+            clickHotzone.HoveredSubMessage = "x" + amount;
+            clickHotzone.OnPointerEnteredEvent += () => ItemMouseEntered(clickHotzone);
+            clickHotzone.OnPointerExitedEvent += () => ItemMouseExited(clickHotzone);
 
             trackedResourcesDisplayElements.Add(type, itemDisplay);
         }
@@ -184,24 +171,83 @@ namespace ResourceMonitor
             pageCounter.GetComponent<Text>().text = string.Format("Page {0} Of {1}", currentPage, maxPage);
             prevPage.SetActive(currentPage != 1);
             nextPage.SetActive(currentPage != maxPage);
+
+            if (prevPage.activeSelf == false)
+            {
+                prevPageText.color = Color.white;
+            }
+
+            if (nextPage.activeSelf == false)
+            {
+                nextPageText.color = Color.white;
+            }
         }
 
-        private void PaginatorButtonMouseEntered(Text text)
+        public void Update()
         {
+            if (activeClickHotzone != null)
+            {
+                HandReticle.main.SetInteractTextRaw(activeClickHotzone.HoveredMessage, activeClickHotzone.HoveredSubMessage);
+                if (InInteractionRange() == false)
+                {
+                    activeClickHotzone = null;
+                }
+            }
+        }
+
+        private void PaginatorButtonMouseEntered(Text text, ClickHotzone clickHotzone)
+        {
+            if (InInteractionRange() == false)
+            {
+                return;
+            }
+
             text.color = Color.red;
-            HandReticle.main.SetInteractText(text.text);
+            activeClickHotzone = clickHotzone;
         }
 
         private void PaginatorButtonMouseExited(Text text)
         {
             text.color = Color.white;
-            HandReticle.main.SetInteractText("");
+            activeClickHotzone = null;
         }
 
-        private void PaginatorButtonMouseClicked(Text text, int page)
+        private void PaginatorButtonMouseClicked(Text text, int page, ClickHotzone clickHotzone)
         {
-            text.color = Color.white;
+            if (InInteractionRange() == false)
+            {
+                return;
+            }
+
             DrawPage(page);
+            if (clickHotzone == activeClickHotzone)
+            {
+                if (activeClickHotzone.gameObject == null || activeClickHotzone.gameObject.activeSelf == false)
+                {
+                    text.color = Color.white;
+                    activeClickHotzone = null;
+                }
+            }
+        }
+
+        private void ItemMouseEntered(ClickHotzone clickHotzone)
+        {
+            if (InInteractionRange() == false)
+            {
+                return;
+            }
+
+            activeClickHotzone = clickHotzone;
+        }
+
+        private void ItemMouseExited(ClickHotzone clickHotzone)
+        {
+            activeClickHotzone = null;
+        }
+
+        private Boolean InInteractionRange()
+        {
+            return Mathf.Abs(Vector3.Distance(canvas.transform.position, Player.main.transform.position)) <= MAX_INTERACTION_DISTANCE;
         }
 
         private void CreateCanvas(Transform parent)
