@@ -1,8 +1,7 @@
 # Subnautica Resource Monitor Game Modification
 A mod for the game Subnautica. Adds two new interior modules to the game that when placed will keep track of all items held in storage containers within the base.
 
-#### New Items:
-Two new items:
+#### Two New Items:
 * Resource Monitor Screen Large - A large screen that takes up the majority of the wall. Requires more resources to build.
 * Resource Monitor Screen Small - A small screen that takes up alot less space on the wall.
 
