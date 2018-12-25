@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -12,32 +13,75 @@ namespace ResourceMonitor
     */
     public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IEventSystemHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        private const int ITEMS_PER_PAGE = 8;
-
+        private const int ITEMS_PER_PAGE = 12;
         private ResourceMonitorLogic rml;
+        private Dictionary<TechType, GameObject> trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
+        private int currentPage;
+        private int maxPage;
+
         private Canvas canvas;
         private GameObject ui;
         private GameObject itemGrid;
-        private Dictionary<TechType, GameObject> itemDisplayElements = new Dictionary<TechType, GameObject>();
+        private GameObject prevPage;
+        private GameObject nextPage;
+        private GameObject pageCounter;
 
         public void Setup(Transform parent, ResourceMonitorLogic rml)
         {
             this.rml = rml;
-            itemDisplayElements = new Dictionary<TechType, GameObject>();
+            trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
 
             CreateCanvas(parent);
             ui = Instantiate(EntryPoint.ResourceMonitorDisplayUIPrefab);
             ui.transform.SetParent(canvas.transform, false);
             ui.GetComponent<RectTransform>().localScale = new Vector3(0.01f, 0.01f, 1f);
             itemGrid = ui.transform.Find("ItemGridBackground").gameObject;
+
+            prevPage = ui.transform.Find("PreviousPage").gameObject;
+            nextPage = ui.transform.Find("NextPage").gameObject;
+            pageCounter = ui.transform.Find("PageCounter").gameObject;
+
+            Text prevPageText = prevPage.GetComponent<Text>();
+            Text nextPageText = nextPage.GetComponent<Text>();
+            ClickHotzone prevPageClickZone = prevPage.AddComponent<ClickHotzone>();
+            ClickHotzone nextPageClickZone = nextPage.AddComponent<ClickHotzone>();
+            prevPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(prevPageText);
+            nextPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(nextPageText);
+            prevPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(prevPageText);
+            nextPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(nextPageText);
+            prevPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(prevPageText, currentPage - 1);
+            nextPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(nextPageText, currentPage + 1);
+
+            FinalSetup();
+        }
+
+        // To be called always after the display is done creating all other objects it needs.
+        private void FinalSetup()
+        {
+            currentPage = 1;
+            CalculateNewMaxPages();
+            UpdatePaginator();
+            DrawPage(1);
         }
 
         public void Destroy()
         {
-            itemDisplayElements.Clear();
-            itemDisplayElements = null;
+            trackedResourcesDisplayElements.Clear();
+            trackedResourcesDisplayElements = null;
             Destroy(canvas);
             canvas = null;
+        }
+
+        public void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                DrawPage(currentPage - 1);
+            }
+            else if (Input.GetKeyDown(KeyCode.P))
+            {
+                DrawPage(currentPage + 1);
+            }
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -53,38 +97,111 @@ namespace ResourceMonitor
         {
         }
 
-        public void ItemModified(TechType item, int newQuantity)
+        public void ItemModified(TechType type, int newQuantity)
         {
-            if (newQuantity <= 0)
+            if (newQuantity > 0)
             {
-                Destroy(itemDisplayElements[item]);
-                itemDisplayElements.Remove(item);
-            }
-            else
-            {
-                if (itemDisplayElements.ContainsKey(item))
+                if (trackedResourcesDisplayElements.ContainsKey(type))
                 {
-                    itemDisplayElements[item].GetComponentInChildren<Text>().text = "x" + newQuantity;
+                    trackedResourcesDisplayElements[type].GetComponentInChildren<Text>().text = "x" + newQuantity;
                 }
                 else
                 {
-                    GameObject itemDisplay = Instantiate(EntryPoint.ResourceMonitorDisplayItemUIPrefab);
-                    itemDisplay.transform.SetParent(itemGrid.transform, false);
-                    itemDisplay.GetComponentInChildren<Text>().text = "x" + newQuantity;
-
-                    var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
-                    icon.sprite = SpriteManager.Get(item);
-                    icon.SetAllDirty();
-
-                    itemDisplayElements.Add(item, itemDisplay);
+                    // TO:DO If were meant to show it right now redraw that page.
+                    // If we are not meant to show it right now at least execute UpdatePaginator();
+                    DrawPage(currentPage);
                 }
+            }
+            else
+            {
+                DrawPage(currentPage);
+            }
+        }
+
+        private void CalculateNewMaxPages()
+        {
+            maxPage = Mathf.CeilToInt((rml.TrackedResources.Count - 1) / ITEMS_PER_PAGE) + 1;
+            if (currentPage > maxPage)
+            {
+                currentPage = maxPage;
+            }
+        }
+
+        public void DrawPage(int page)
+        {
+            currentPage = page;
+            if (currentPage <= 0)
+            {
+                currentPage = 1;
+            }
+            else if (currentPage > maxPage)
+            {
+                currentPage = maxPage;
+            }
+
+            int startingPosition = (currentPage - 1) * ITEMS_PER_PAGE;
+            int endingPosition = startingPosition + ITEMS_PER_PAGE;
+            if (endingPosition > rml.TrackedResources.Count)
+            {
+                endingPosition = rml.TrackedResources.Count;
+            }
+
+            ClearPage();
+            for (int i = startingPosition; i < endingPosition; i++)
+            {
+                KeyValuePair<TechType, int> kvp = rml.TrackedResources.ElementAt(i);
+                CreateAndAddItemDisplay(kvp.Key, kvp.Value);
             }
 
             UpdatePaginator();
         }
 
+        private void ClearPage()
+        {
+            foreach (GameObject go in trackedResourcesDisplayElements.Values)
+            {
+                Destroy(go);
+            }
+
+            trackedResourcesDisplayElements.Clear();
+        }
+
+        private void CreateAndAddItemDisplay(TechType type, int amount)
+        {
+            GameObject itemDisplay = Instantiate(EntryPoint.ResourceMonitorDisplayItemUIPrefab);
+            itemDisplay.transform.SetParent(itemGrid.transform, false);
+            itemDisplay.GetComponentInChildren<Text>().text = "x" + amount;
+
+            var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
+            icon.sprite = SpriteManager.Get(type);
+
+            trackedResourcesDisplayElements.Add(type, itemDisplay);
+        }
+
         private void UpdatePaginator()
         {
+            CalculateNewMaxPages();
+            pageCounter.GetComponent<Text>().text = string.Format("Page {0} Of {1}", currentPage, maxPage);
+            prevPage.SetActive(currentPage != 1);
+            nextPage.SetActive(currentPage != maxPage);
+        }
+
+        private void PaginatorButtonMouseEntered(Text text)
+        {
+            text.color = Color.red;
+            HandReticle.main.SetInteractText(text.text);
+        }
+
+        private void PaginatorButtonMouseExited(Text text)
+        {
+            text.color = Color.white;
+            HandReticle.main.SetInteractText("");
+        }
+
+        private void PaginatorButtonMouseClicked(Text text, int page)
+        {
+            text.color = Color.white;
+            DrawPage(page);
         }
 
         private void CreateCanvas(Transform parent)
@@ -118,22 +235,3 @@ namespace ResourceMonitor
         }
     }
 }
-
-/*
-ErrorMessage.AddMessage("Called");
-GameObject grid = ui.transform.Find("ItemGridBackground").gameObject;
-ErrorMessage.AddMessage("Grid Found: " + (grid != null));
-ErrorMessage.AddMessage("Grid Children Found: " + grid.transform.childCount);
-foreach (Transform resourceMonitorItem in grid.transform)
-{
-    GameObject itemHolder = resourceMonitorItem.Find("ItemHolder").gameObject;
-    ErrorMessage.AddMessage("Is ItemHolder valid:" + (itemHolder != null));
-
-    Atlas.Sprite sprite = SpriteManager.Get(TechType.Beacon);
-    var icon = itemHolder.AddComponent<uGUI_Icon>();
-    ErrorMessage.AddMessage("Icon added: " + (icon != null));
-    icon.sprite = sprite;
-    icon.SetAllDirty();
-}
-ErrorMessage.AddMessage("Finished Called");
-*/

@@ -13,8 +13,7 @@ namespace ResourceMonitor
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
         private ResourceMonitorDisplay rmd;
-        private GameObject seaBase = null;
-        private Dictionary<TechType, int> trackedResources = new Dictionary<TechType, int>();
+        public SortedDictionary<TechType, int> TrackedResources { private set; get; } = new SortedDictionary<TechType, int>();
 
         public bool CanDeconstruct(out string reason)
         {
@@ -32,10 +31,10 @@ namespace ResourceMonitor
 
         private void TurnOn()
         {
+            TrackLockers();
+
             rmd = gameObject.AddComponent<ResourceMonitorDisplay>();
             rmd.Setup(gameObject.transform, this);
-
-            TrackLockers();
         }
 
         private void TurnOff()
@@ -47,7 +46,7 @@ namespace ResourceMonitor
 
         private void TrackLockers()
         {
-            seaBase = gameObject?.transform?.parent?.gameObject;
+            GameObject seaBase = gameObject?.transform?.parent?.gameObject;
             if (seaBase == null)
             {
                 ErrorMessage.AddMessage("ResourceMonitorScreen: Can not work out what base it was placed inside.");
@@ -69,29 +68,30 @@ namespace ResourceMonitor
 
         private void AddItemsToTracker(TechType item, int amountToAdd = 1)
         {
-            if (trackedResources.ContainsKey(item))
+            if (TrackedResources.ContainsKey(item))
             {
-                trackedResources[item] = trackedResources[item] + amountToAdd;
+                TrackedResources[item] = TrackedResources[item] + amountToAdd;
             }
             else
             {
-                trackedResources.Add(item, amountToAdd);
+                TrackedResources.Add(item, amountToAdd);
             }
 
-            rmd?.ItemModified(item, trackedResources[item]);
+            rmd?.ItemModified(item, TrackedResources[item]);
         }
 
         private void RemoveItemsFromTracker(TechType item, int amountToRemove = 1)
         {
-            if (trackedResources.ContainsKey(item))
+            if (TrackedResources.ContainsKey(item))
             {
-                trackedResources[item] = trackedResources[item] - amountToRemove;
-                rmd?.ItemModified(item, trackedResources[item]);
-
-                if (trackedResources[item] <= 0)
+                int newQuantity = TrackedResources[item] - amountToRemove;
+                TrackedResources[item] = newQuantity;
+                if (newQuantity <= 0)
                 {
-                    trackedResources.Remove(item);
+                    TrackedResources.Remove(item);
                 }
+
+                rmd?.ItemModified(item, newQuantity);
             }
         }
 

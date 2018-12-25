@@ -2,9 +2,10 @@ D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\ResourceMonitor.d
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\ResourceMonitor.pdb
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\0Harmony.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Assembly-CSharp.dll
+D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\SMLHelper.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\UnityEngine.dll
-D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Assembly-CSharp-firstpass.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\UnityEngine.UI.dll
+D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Assembly-CSharp-firstpass.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\LitJson.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Poly2Tri.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Newtonsoft.Json.dll
@@ -13,9 +14,8 @@ D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\LumenWorks.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\QModInstaller.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\LibNoise.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\Mono.Cecil.dll
+D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\SMLHelper.xml
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\obj\Debug\ResourceMonitor.csproj.CoreCompileInputs.cache
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\obj\Debug\ResourceMonitor.csproj.CopyComplete
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\obj\Debug\ResourceMonitor.dll
 D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\obj\Debug\ResourceMonitor.pdb
-D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\SMLHelper.dll
-D:\Subnatuic Modding\ResourceMonitor\ResourceMonitor\bin\Debug\SMLHelper.xml

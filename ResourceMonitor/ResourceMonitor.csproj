@@ -54,9 +54,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\ClickHotzone.cs" />
     <Compile Include="Components\ResourceMonitorDisplay.cs" />
     <Compile Include="Components\ResourceMonitorLogic.cs" />
-    <Compile Include="ResourceMonitorScreen.cs" />
+    <Compile Include="ResourceMonitorScreenSmall.cs" />
+    <Compile Include="ResourceMonitorScreenLarge.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="EntryPoint.cs" />
   </ItemGroup>

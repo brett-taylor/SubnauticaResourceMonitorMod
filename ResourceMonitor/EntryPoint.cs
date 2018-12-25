@@ -21,7 +21,8 @@ namespace ResourceMonitor
         {
             HarmonyInstance harmony = HarmonyInstance.Create("taylor.brett.ResourceMonitor.mod");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
-            ResourceMonitorScreen.Singleton.Patch();
+            ResourceMonitorScreenLarge.Singleton.Patch();
+            ResourceMonitorScreenSmall.Singleton.Patch();
 
             LoadAssets();
         }
