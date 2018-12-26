@@ -8,18 +8,13 @@ namespace ResourceMonitor
     * When set up: We find the base we was placed in. Get all StorageContainer components in that base gameobject children.
     * We then subscribe to the events of items getting added and removed from that StorageContainer.
     * We don't care when a StorageContainer gets removed as for that to happen it has to be empty and so the remove item event will be called.
-    * We do care about when a new locker is added though as we need to subscribe to its events. TO:DO implement this.
+    * We do care about when a new locker is added though as we need to subscribe to its events we use Harmony's Postfox on StorageContainer.Awake() for that.
     */
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
-        private ResourceMonitorDisplay rmd;
         public SortedDictionary<TechType, int> TrackedResources { private set; get; } = new SortedDictionary<TechType, int>();
-
-        public bool CanDeconstruct(out string reason)
-        {
-            reason = null;
-            return true;
-        }
+        private ResourceMonitorDisplay rmd;
+        private GameObject seaBase;
 
         public void OnConstructedChanged(bool constructed)
         {
@@ -29,12 +24,27 @@ namespace ResourceMonitor
                 TurnOff();
         }
 
+        public bool CanDeconstruct(out string reason)
+        {
+            reason = null;
+            return true;
+        }
+
         private void TurnOn()
         {
-            TrackLockers();
+            seaBase = gameObject?.transform?.parent?.gameObject;
+            if (seaBase == null)
+            {
+                ErrorMessage.AddMessage("[ERROR] ResourceMonitorScreen: Can not work out what base it was placed inside.");
+                System.Console.WriteLine("[ERROR] ResourceMonitorScreen: Can not work out what base it was placed inside.");
+                return;
+            }
 
+            TrackExistingStorageContainers();
             rmd = gameObject.AddComponent<ResourceMonitorDisplay>();
             rmd.Setup(gameObject.transform, this);
+
+            Patchers.BuilderPatcher.OnStorageContainedAdded += TrackNewlyPlacedStorageContainer;
         }
 
         private void TurnOff()
@@ -44,26 +54,34 @@ namespace ResourceMonitor
             rmd = null;
         }
 
-        private void TrackLockers()
+        private void TrackExistingStorageContainers()
         {
-            GameObject seaBase = gameObject?.transform?.parent?.gameObject;
-            if (seaBase == null)
+            StorageContainer[] containers = seaBase.GetComponentsInChildren<StorageContainer>();
+            foreach (StorageContainer sc in containers)
             {
-                ErrorMessage.AddMessage("ResourceMonitorScreen: Can not work out what base it was placed inside.");
-                TurnOff();
-                return;
+                TrackStorageContainer(sc);
+            }
+        }
+
+        public void TrackNewlyPlacedStorageContainer(StorageContainer sc)
+        {
+            GameObject newSeaBase = gameObject?.transform?.parent?.gameObject;
+            if (newSeaBase != null && newSeaBase == seaBase)
+            {
+                ErrorMessage.AddMessage("New StorageContainer tracked v2");
+                TrackStorageContainer(sc);
+            }
+        }
+
+        private void TrackStorageContainer(StorageContainer sc)
+        {
+            foreach (var item in sc.container.GetItemTypes())
+            {
+                AddItemsToTracker(item, sc.container.GetCount(item));
             }
 
-            foreach (StorageContainer sc in seaBase.GetComponentsInChildren<StorageContainer>())
-            {
-                foreach (var item in sc.container.GetItemTypes())
-                {
-                    AddItemsToTracker(item, sc.container.GetCount(item));
-                }
-
-                sc.container.onAddItem += (item) => AddItemsToTracker(item.item.GetTechType());
-                sc.container.onRemoveItem += (item) => RemoveItemsFromTracker(item.item.GetTechType());
-            }
+            sc.container.onAddItem += (item) => AddItemsToTracker(item.item.GetTechType());
+            sc.container.onRemoveItem += (item) => RemoveItemsFromTracker(item.item.GetTechType());
         }
 
         private void AddItemsToTracker(TechType item, int amountToAdd = 1)

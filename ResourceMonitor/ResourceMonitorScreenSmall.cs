@@ -16,8 +16,6 @@ namespace ResourceMonitor
         public override TechGroup GroupForPDA => TechGroup.InteriorModules;
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
         public override string IconFileName => "ResourceMonitorSmall.png";
-        public override TechType RequiredForUnlock => TechType.None;
-        public override string HandOverText => "Test Test Test 5";
 
         protected ResourceMonitorScreenSmall() : base("ResourceMonitorBuildableSmall", "Resource Monitor Screen Small", "Track how many resources you have stored away in your sea base on one handy small screen.")
         {

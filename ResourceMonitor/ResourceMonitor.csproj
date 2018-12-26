@@ -61,6 +61,7 @@
     <Compile Include="Components\ClickHotzone.cs" />
     <Compile Include="Components\ResourceMonitorDisplay.cs" />
     <Compile Include="Components\ResourceMonitorLogic.cs" />
+    <Compile Include="Patchers\BuilderPatcher.cs" />
     <Compile Include="ResourceMonitorScreenSmall.cs" />
     <Compile Include="ResourceMonitorScreenLarge.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
