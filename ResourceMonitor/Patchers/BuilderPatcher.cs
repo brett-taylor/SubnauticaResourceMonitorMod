@@ -15,7 +15,10 @@ namespace ResourceMonitor.Patchers
         [HarmonyPostfix]
         public static void Postfix(StorageContainer __instance)
         {
-            OnStorageContainedAdded.Invoke(__instance);
+            if (OnStorageContainedAdded != null)
+            {
+                OnStorageContainedAdded.Invoke(__instance);
+            }
         }
     }
 }

@@ -66,6 +66,7 @@ namespace ResourceMonitor
 
         public void AlertedNewStorageContainerPlaced(StorageContainer sc)
         {
+            System.Console.WriteLine("[ERROR] sc is null ? " + (sc == null ? "its null" : "its not null"));
             StartCoroutine("TrackNewStorageContainerCoroutine", sc);
         }
 
