@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ResourceMonitor
@@ -44,7 +45,7 @@ namespace ResourceMonitor
             rmd = gameObject.AddComponent<ResourceMonitorDisplay>();
             rmd.Setup(gameObject.transform, this);
 
-            Patchers.BuilderPatcher.OnStorageContainedAdded += TrackNewlyPlacedStorageContainer;
+            Patchers.BuilderPatcher.OnStorageContainedAdded += AlertedNewStorageContainerPlaced;
         }
 
         private void TurnOff()
@@ -63,14 +64,23 @@ namespace ResourceMonitor
             }
         }
 
-        public void TrackNewlyPlacedStorageContainer(StorageContainer sc)
+        public void AlertedNewStorageContainerPlaced(StorageContainer sc)
         {
-            GameObject newSeaBase = gameObject?.transform?.parent?.gameObject;
+            StartCoroutine("TrackNewStorageContainerCoroutine", sc);
+        }
+
+        public IEnumerator TrackNewStorageContainerCoroutine(StorageContainer sc)
+        {
+            // We yield to the end of the frame as we need the parent/children tree to update.
+            yield return new WaitForEndOfFrame();
+
+            GameObject newSeaBase = sc?.gameObject?.transform?.parent?.gameObject;
             if (newSeaBase != null && newSeaBase == seaBase)
             {
-                ErrorMessage.AddMessage("New StorageContainer tracked v2");
                 TrackStorageContainer(sc);
             }
+
+            StopCoroutine("TrackNewStorageContainerCoroutine");
         }
 
         private void TrackStorageContainer(StorageContainer sc)
