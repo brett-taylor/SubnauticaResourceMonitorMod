@@ -2,27 +2,66 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ResourceMonitor
+namespace ResourceMonitor.Components
 {
     /**
     * Component that contains all the logic related to the resource monitor component.
     * When set up: We find the base we was placed in. Get all StorageContainer components in that base gameobject children.
     * We then subscribe to the events of items getting added and removed from that StorageContainer.
-    * We don't care when a StorageContainer gets removed as for that to happen it has to be empty and so the remove item event will be called.
-    * We do care about when a new locker is added though as we need to subscribe to its events we use Harmony's Postfox on StorageContainer.Awake() for that.
+    * We care about when a new locker is added though as we need to subscribe to its events we use Harmony's Postfix on StorageContainer.Awake() for that.
+    * We care about when a locker is removed though so we can unsubscribe from it. Either if its getting deleted or unloaded due to game exit. TO:DO implemenet this.
     */
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
         public SortedDictionary<TechType, int> TrackedResources { private set; get; } = new SortedDictionary<TechType, int>();
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase;
+        private bool isEnabled = false;
+
+        private IEnumerator Startup()
+        {
+            yield return new WaitForEndOfFrame();
+
+            seaBase = gameObject?.transform?.parent?.gameObject;
+            if (seaBase == null)
+            {
+                ErrorMessage.AddMessage("[ResourceMonitor] ERROR: Can not work out what base it was placed inside.");
+                System.Console.WriteLine("[ResourceMonitor] ERROR: Can not work out what base it was placed inside.");
+                yield break;
+            }
+
+            TrackExistingStorageContainers();
+            bool result = Patchers.StorageContainerAwakePatcher.AddEventHandlerIfMissing(AlertedNewStorageContainerPlaced);
+            TurnDisplayOn();
+        }
+
+        public void OnDestroy()
+        {
+            Patchers.StorageContainerAwakePatcher.RemoveEventHandler(AlertedNewStorageContainerPlaced);
+            TrackedResources.Clear();
+        }
 
         public void OnConstructedChanged(bool constructed)
         {
-            if (constructed && rmd == null)
-                TurnOn();
+            if (constructed)
+            {
+                if (isEnabled == false)
+                {
+                    isEnabled = true;
+                    StartCoroutine(Startup());
+                }
+                else
+                {
+                    TurnDisplayOn();
+                }
+            }
             else
-                TurnOff();
+            {
+                if (isEnabled)
+                {
+                    TurnDisplayOff();
+                }
+            }
         }
 
         public bool CanDeconstruct(out string reason)
@@ -31,28 +70,25 @@ namespace ResourceMonitor
             return true;
         }
 
-        private void TurnOn()
+        private void TurnDisplayOn()
         {
-            seaBase = gameObject?.transform?.parent?.gameObject;
-            if (seaBase == null)
+            if (rmd != null)
             {
-                ErrorMessage.AddMessage("[ERROR] ResourceMonitorScreen: Can not work out what base it was placed inside.");
-                System.Console.WriteLine("[ERROR] ResourceMonitorScreen: Can not work out what base it was placed inside.");
-                return;
+                TurnDisplayOff();
             }
 
-            TrackExistingStorageContainers();
             rmd = gameObject.AddComponent<ResourceMonitorDisplay>();
-            rmd.Setup(gameObject.transform, this);
-
-            Patchers.BuilderPatcher.OnStorageContainedAdded += AlertedNewStorageContainerPlaced;
+            rmd.Setup(this);
         }
 
-        private void TurnOff()
+        private void TurnDisplayOff()
         {
-            rmd?.Destroy();
-            Destroy(rmd);
-            rmd = null;
+            if (rmd != null)
+            {
+                rmd.TurnDisplayOff();
+                Destroy(rmd);
+                rmd = null;
+            }
         }
 
         private void TrackExistingStorageContainers()
@@ -64,9 +100,8 @@ namespace ResourceMonitor
             }
         }
 
-        public void AlertedNewStorageContainerPlaced(StorageContainer sc)
+        private void AlertedNewStorageContainerPlaced(StorageContainer sc)
         {
-            System.Console.WriteLine("[ERROR] sc is null ? " + (sc == null ? "its null" : "its not null"));
             StartCoroutine("TrackNewStorageContainerCoroutine", sc);
         }
 
@@ -74,7 +109,6 @@ namespace ResourceMonitor
         {
             // We yield to the end of the frame as we need the parent/children tree to update.
             yield return new WaitForEndOfFrame();
-
             GameObject newSeaBase = sc?.gameObject?.transform?.parent?.gameObject;
             if (newSeaBase != null && newSeaBase == seaBase)
             {
@@ -86,6 +120,11 @@ namespace ResourceMonitor
 
         private void TrackStorageContainer(StorageContainer sc)
         {
+            if (sc == null || sc.container == null)
+            {
+                return;
+            }
+
             foreach (var item in sc.container.GetItemTypes())
             {
                 AddItemsToTracker(item, sc.container.GetCount(item));

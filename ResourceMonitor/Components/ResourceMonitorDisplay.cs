@@ -1,98 +1,98 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace ResourceMonitor
+namespace ResourceMonitor.Components
 {
     /**
-    * Component that contains drawing to the frame in world space.
-    * Create canvas code is from https://github.com/RandyKnapp/
+    * Component that contains the controller to the view. Majority of the view is set up already on the prefab inside of the unity editor.
     */
-    public class ResourceMonitorDisplay : MonoBehaviour
+    public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        private const int ITEMS_PER_PAGE = 12;
-        private const float MAX_INTERACTION_DISTANCE = 2f;
+        public static readonly float MAX_INTERACTION_DISTANCE = 2.5f;
+        private static readonly float WELCOME_ANIMATION_TIME = 8.5f;
+        private static readonly float MAIN_SCREEN_ANIMATION_TIME = 3f;
+        private static readonly bool QUICK_SHOW = false;
+        private static readonly int ITEMS_PER_PAGE = 12;
 
         private ResourceMonitorLogic rml;
-        private Dictionary<TechType, GameObject> trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
+        private Dictionary<TechType, GameObject> trackedResourcesDisplayElements;
         private int currentPage;
         private int maxPage;
-        private Canvas canvas;
-        private GameObject ui;
-        private GameObject itemGrid;
-        private GameObject prevPage;
-        private GameObject nextPage;
-        private GameObject pageCounter;
-        private Text prevPageText;
-        private Text nextPageText;
-        private ClickHotzone activeClickHotzone = null;
 
-        public void Setup(Transform parent, ResourceMonitorLogic rml)
+        private Animator animator;
+        private GameObject canvasGameObject;
+        private GameObject blackCover;
+        private GameObject welcomeScreen;
+        private GameObject mainScreen;
+        private GameObject mainScreensCover;
+        private GameObject mainScreenItemGrid;
+        private GameObject previousPageGameObject;
+        private GameObject nextPageGameObject;
+        private GameObject pageCounterGameObject;
+        private Text pageCounterText;
+
+        public void Setup(ResourceMonitorLogic rml)
         {
             this.rml = rml;
             trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
 
-            CreateCanvas(parent);
-            ui = Instantiate(EntryPoint.ResourceMonitorDisplayUIPrefab);
-            ui.transform.SetParent(canvas.transform, false);
-            ui.GetComponent<RectTransform>().localScale = new Vector3(0.01f, 0.01f, 1f);
-            itemGrid = ui.transform.Find("ItemGridBackground").gameObject;
+            if (FindAllComponents() == false)
+            {
+                TurnDisplayOff();
+                return;
+            }
 
-            FindRequiredUIElements();
-            InitialiseClickHotzones();
-            FinalSetup();
-        }
-
-        private void FindRequiredUIElements()
-        {
-            prevPage = ui.transform.Find("PreviousPage").gameObject;
-            nextPage = ui.transform.Find("NextPage").gameObject;
-            prevPageText = prevPage.GetComponent<Text>();
-            nextPageText = nextPage.GetComponent<Text>();
-            pageCounter = ui.transform.Find("PageCounter").gameObject;
-        }
-
-        private void InitialiseClickHotzones()
-        {
-            ClickHotzone prevPageClickZone = prevPage.AddComponent<ClickHotzone>();
-            prevPageClickZone.HoveredMessage = "Previous Page";
-
-            ClickHotzone nextPageClickZone = nextPage.AddComponent<ClickHotzone>();
-            nextPageClickZone.HoveredMessage = "Next Page";
-
-            prevPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(prevPageText, prevPageClickZone);
-            nextPageClickZone.OnPointerEnteredEvent += () => PaginatorButtonMouseEntered(nextPageText, nextPageClickZone);
-            prevPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(prevPageText);
-            nextPageClickZone.OnPointerExitedEvent += () => PaginatorButtonMouseExited(nextPageText);
-            prevPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(prevPageText, currentPage - 1, prevPageClickZone);
-            nextPageClickZone.OnPointerClickedEvent += () => PaginatorButtonMouseClicked(nextPageText, currentPage + 1, nextPageClickZone);
-        }
-
-        private void FinalSetup()
-        {
             currentPage = 1;
-            CalculateNewMaxPages();
             UpdatePaginator();
+
+            if (QUICK_SHOW == false)
+            {
+                StartCoroutine(FinalSetup());
+            }
+            else
+            {
+                welcomeScreen.SetActive(false);
+                blackCover.SetActive(false);
+                mainScreen.SetActive(true);
+                mainScreensCover.SetActive(false);
+                DrawPage(1);
+            }
+        }
+
+        private IEnumerator FinalSetup()
+        {
+            welcomeScreen.SetActive(false);
+            blackCover.SetActive(false);
+            mainScreen.SetActive(false);
+            animator.Play("Reset");
+            yield return new WaitForEndOfFrame();
+            animator.Play("Welcome");
+            yield return new WaitForSeconds(WELCOME_ANIMATION_TIME);
+            animator.Play("ShowMainScreen");
+            yield return new WaitForSeconds(MAIN_SCREEN_ANIMATION_TIME);
+            welcomeScreen.SetActive(false);
+            blackCover.SetActive(false);
+            mainScreen.SetActive(true);
             DrawPage(1);
         }
 
-        public void Destroy()
+        public void TurnDisplayOff()
         {
-            activeClickHotzone = null;
+            StopCoroutine(FinalSetup());
+            blackCover.SetActive(true);
             trackedResourcesDisplayElements.Clear();
             trackedResourcesDisplayElements = null;
-            Destroy(canvas);
-            canvas = null;
         }
 
-        public void ItemModified(TechType type, int newQuantity)
+        public void ItemModified(TechType type, int newAmount)
         {
-            if (newQuantity > 0 && trackedResourcesDisplayElements.ContainsKey(type))
+            if (newAmount > 0 && trackedResourcesDisplayElements.ContainsKey(type))
             {
-                trackedResourcesDisplayElements[type].GetComponentInChildren<Text>().text = "x" + newQuantity;
-                trackedResourcesDisplayElements[type].GetComponentInChildren<ClickHotzone>().HoveredSubMessage = "x" + newQuantity;
+                trackedResourcesDisplayElements[type].GetComponentInChildren<Text>().text = "x" + newAmount;
                 return;
             }
 
@@ -108,7 +108,12 @@ namespace ResourceMonitor
             }
         }
 
-        public void DrawPage(int page)
+        public void ChangePageBy(int amount)
+        {
+            DrawPage(currentPage + amount);
+        }
+
+        private void DrawPage(int page)
         {
             currentPage = page;
             if (currentPage <= 0)
@@ -137,147 +142,162 @@ namespace ResourceMonitor
             UpdatePaginator();
         }
 
+        private void UpdatePaginator()
+        {
+            CalculateNewMaxPages();
+            pageCounterText.text = string.Format("Page {0} Of {1}", currentPage, maxPage);
+            previousPageGameObject.SetActive(currentPage != 1);
+            nextPageGameObject.SetActive(currentPage != maxPage);
+        }
+
         private void ClearPage()
         {
-            foreach (GameObject go in trackedResourcesDisplayElements.Values)
+            for (int i = 0; i < mainScreenItemGrid.transform.childCount; i++)
             {
-                Destroy(go);
+                Destroy(mainScreenItemGrid.transform.GetChild(i).gameObject);
             }
 
-            trackedResourcesDisplayElements.Clear();
+            if (trackedResourcesDisplayElements != null)
+            {
+                trackedResourcesDisplayElements.Clear();
+            }
         }
 
         private void CreateAndAddItemDisplay(TechType type, int amount)
         {
             GameObject itemDisplay = Instantiate(EntryPoint.ResourceMonitorDisplayItemUIPrefab);
-            itemDisplay.transform.SetParent(itemGrid.transform, false);
+            itemDisplay.transform.SetParent(mainScreenItemGrid.transform, false);
             itemDisplay.GetComponentInChildren<Text>().text = "x" + amount;
+
+            ItemButton itemButton = itemDisplay.AddComponent<ItemButton>();
+            itemButton.Type = type;
+            itemButton.Amount = amount;
 
             uGUI_Icon icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
             icon.sprite = SpriteManager.Get(type);
 
-            ClickHotzone clickHotzone = itemDisplay.AddComponent<ClickHotzone>();
-            clickHotzone.HoveredMessage = TechTypeExtensions.Get(Language.main, type);
-            clickHotzone.HoveredSubMessage = "x" + amount;
-            clickHotzone.OnPointerEnteredEvent += () => ItemMouseEntered(clickHotzone);
-            clickHotzone.OnPointerExitedEvent += () => ItemMouseExited(clickHotzone);
-
             trackedResourcesDisplayElements.Add(type, itemDisplay);
         }
 
-        private void UpdatePaginator()
+        public void OnPointerClick(PointerEventData eventData)
         {
-            CalculateNewMaxPages();
-            pageCounter.GetComponent<Text>().text = string.Format("Page {0} Of {1}", currentPage, maxPage);
-            prevPage.SetActive(currentPage != 1);
-            nextPage.SetActive(currentPage != maxPage);
+        }
 
-            if (prevPage.activeSelf == false)
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+        }
+
+        private bool FindAllComponents()
+        {
+            canvasGameObject = gameObject.GetComponentInChildren<Canvas>()?.gameObject;
+            if (canvasGameObject == null)
             {
-                prevPageText.color = Color.white;
+                System.Console.WriteLine("[ResourceMonitor] Canvas not found.");
+                return false;
             }
 
-            if (nextPage.activeSelf == false)
+            animator = canvasGameObject.GetComponent<Animator>();
+            if (animator == null)
             {
-                nextPageText.color = Color.white;
-            }
-        }
-
-        public void Update()
-        {
-            if (activeClickHotzone != null)
-            {
-                HandReticle.main.SetInteractTextRaw(activeClickHotzone.HoveredMessage, activeClickHotzone.HoveredSubMessage);
-                if (InInteractionRange() == false)
-                {
-                    activeClickHotzone = null;
-                }
-            }
-        }
-
-        private void PaginatorButtonMouseEntered(Text text, ClickHotzone clickHotzone)
-        {
-            if (InInteractionRange() == false)
-            {
-                return;
+                System.Console.WriteLine("[ResourceMonitor] Animator not found.");
+                return false;
             }
 
-            text.color = Color.red;
-            activeClickHotzone = clickHotzone;
-        }
-
-        private void PaginatorButtonMouseExited(Text text)
-        {
-            text.color = Color.white;
-            activeClickHotzone = null;
-        }
-
-        private void PaginatorButtonMouseClicked(Text text, int page, ClickHotzone clickHotzone)
-        {
-            if (InInteractionRange() == false)
+            blackCover = canvasGameObject.FindChild("BlackCover")?.gameObject;
+            if (blackCover == null)
             {
-                return;
+                System.Console.WriteLine("[ResourceMonitor] BlackCover not found.");
+                return false;
             }
 
-            DrawPage(page);
-            if (clickHotzone == activeClickHotzone)
+            GameObject screenHolder = canvasGameObject.transform.Find("Screens")?.gameObject;
+            if (screenHolder == null)
             {
-                if (activeClickHotzone.gameObject == null || activeClickHotzone.gameObject.activeSelf == false)
-                {
-                    text.color = Color.white;
-                    activeClickHotzone = null;
-                }
-            }
-        }
-
-        private void ItemMouseEntered(ClickHotzone clickHotzone)
-        {
-            if (InInteractionRange() == false)
-            {
-                return;
+                System.Console.WriteLine("[ResourceMonitor] Screen Holder Gameobject not found.");
+                return false;
             }
 
-            activeClickHotzone = clickHotzone;
-        }
+            welcomeScreen = screenHolder.FindChild("WelcomeScreen")?.gameObject;
+            if (welcomeScreen == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: WelcomeScreen not found.");
+                return false;
+            }
 
-        private void ItemMouseExited(ClickHotzone clickHotzone)
-        {
-            activeClickHotzone = null;
-        }
+            mainScreen = screenHolder.FindChild("MainScreen")?.gameObject;
+            if (mainScreen == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: MainScreen not found.");
+                return false;
+            }
 
-        private Boolean InInteractionRange()
-        {
-            return Mathf.Abs(Vector3.Distance(canvas.transform.position, Player.main.transform.position)) <= MAX_INTERACTION_DISTANCE;
-        }
+            mainScreensCover = mainScreen.FindChild("BlackCover")?.gameObject;
+            if (mainScreensCover == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: MainScreen Cover not found.");
+                return false;
+            }
 
-        private void CreateCanvas(Transform parent)
-        {
-            canvas = new GameObject("ReosurceMonitorDisplayCanvas", new Type[] { typeof(RectTransform) }).AddComponent<Canvas>();
-            Transform transform = canvas.transform;
-            transform.SetParent(parent, false);
-            canvas.sortingLayerID = 1;
+            GameObject actualMainScreen = mainScreen.FindChild("ActualScreen")?.gameObject;
+            if (actualMainScreen == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Actual Main Screen not found.");
+                return false;
+            }
 
-            uGUI_GraphicRaycaster uGUI_GraphicRaycaster = canvas.gameObject.AddComponent<uGUI_GraphicRaycaster>();
-            RectTransform rt = transform as RectTransform;
-            RectTransformExtensions.SetParams(rt, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), null);
-            RectTransformExtensions.SetSize(rt, 5f, 2f);
-            transform.localPosition = new Vector3(0f, 0f, 0.015f);
-            transform.localRotation = new Quaternion(0f, 1f, 0f, 0f);
-            transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-            canvas.scaleFactor = 0.01f;
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.referencePixelsPerUnit = 100f;
-            CanvasScaler canvasScaler = canvas.gameObject.AddComponent<CanvasScaler>();
-            canvasScaler.dynamicPixelsPerUnit = 20f;
+            mainScreenItemGrid = actualMainScreen.FindChild("MainGrid")?.gameObject;
+            if (mainScreenItemGrid == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Main Screen Item Grid not found.");
+                return false;
+            }
 
-            // If we dont add something to the canvas then our PointerEnter/Exit/Click events wont work. Idk why.
-            Image background = new GameObject("ResourceMonitorDisplayBackground", new Type[] { typeof(RectTransform) }).AddComponent<Image>();
-            RectTransform rectTransform = background.rectTransform;
-            RectTransformExtensions.SetParams(rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), canvas.transform);
-            RectTransformExtensions.SetSize(rectTransform, 0, 0);
-            background.color = Color.black;
-            background.transform.localScale = new Vector3(0.01f, 0.01f, 1f);
-            background.type = Image.Type.Sliced;
+            GameObject paginator = actualMainScreen.FindChild("Paginator")?.gameObject;
+            if (paginator == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Paginator not found.");
+                return false;
+            }
+
+            previousPageGameObject = paginator.FindChild("PreviousPage")?.gameObject;
+            if (previousPageGameObject == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Previous Page GameObject not found.");
+                return false;
+            }
+            PaginatorButton pb = previousPageGameObject.AddComponent<PaginatorButton>();
+            pb.ResourceMonitorDisplay = this;
+            pb.AmountToChangePageBy = -1;
+
+            nextPageGameObject = paginator.FindChild("NextPage")?.gameObject;
+            if (nextPageGameObject == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Next Page GameObject not found.");
+                return false;
+            }
+            PaginatorButton pb2 = nextPageGameObject.AddComponent<PaginatorButton>();
+            pb2.ResourceMonitorDisplay = this;
+            pb2.AmountToChangePageBy = 1;
+
+            pageCounterGameObject = paginator.FindChild("PageCounter")?.gameObject;
+            if (pageCounterGameObject == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Page Counter GameObject not found.");
+                return false;
+            }
+
+            pageCounterText = pageCounterGameObject.GetComponent<Text>();
+            if (pageCounterText == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: Page Counter Text not found.");
+                return false;
+            }
+
+            return true;
         }
     }
 }

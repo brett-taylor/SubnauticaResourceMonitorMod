@@ -13,6 +13,7 @@ namespace ResourceMonitor
         public const string AssetBundleLocation = "./QMods/" + AssetsFolderLocation + "/resources";
         public static GameObject ResourceMonitorDisplayUIPrefab { private set; get; }
         public static GameObject ResourceMonitorDisplayItemUIPrefab { private set; get; }
+        public static GameObject ResourceMonitorDisplayModel { private set; get; }
 
         /**
         * Entry method.
@@ -21,9 +22,8 @@ namespace ResourceMonitor
         {
             HarmonyInstance harmony = HarmonyInstance.Create("taylor.brett.ResourceMonitor.mod");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
-            ResourceMonitorScreenLarge.Singleton.Patch();
-            ResourceMonitorScreenSmall.Singleton.Patch();
-
+            new Game_Items.ResourceMonitorScreenLarge().Patch();
+            new Game_Items.ResourceMonitorScreenSmall().Patch();
             LoadAssets();
         }
 
@@ -32,6 +32,7 @@ namespace ResourceMonitor
             AssetBundle ab = AssetBundle.LoadFromFile(AssetBundleLocation);
             ResourceMonitorDisplayUIPrefab = ab.LoadAsset("ResourceMonitorDisplayUI") as GameObject;
             ResourceMonitorDisplayItemUIPrefab = ab.LoadAsset("ResourceItem") as GameObject;
+            ResourceMonitorDisplayModel = ab.LoadAsset("ResourceMonitorModel") as GameObject;
         }
     }
 }
