@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,19 +10,38 @@ namespace ResourceMonitor.Components
 {
     /**
     * Component that contains the controller to the view. Majority of the view is set up already on the prefab inside of the unity editor.
+    * Handles such things as the paginator, drawing all the items that are on the "current page"
+    * Handles the idle screen saver.
+    * Handles the welcome animations.
     */
     public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        public static readonly Color[] POSSIBLE_IDLE_COLORS =
+        {
+            new Color(0.07f, 0.38f, 0.70f), // BLUE
+            new Color(0.86f, 0.22f, 0.22f), // RED
+            new Color(0.22f, 0.86f, 0.22f) // GREEN
+        };
+
         public static readonly float MAX_INTERACTION_DISTANCE = 2.5f;
+        public static readonly float MAX_INTERACTION_IDLE_PAGE_DISTANCE = 10f;
         private static readonly float WELCOME_ANIMATION_TIME = 8.5f;
         private static readonly float MAIN_SCREEN_ANIMATION_TIME = 1.2f;
-        private static readonly bool QUICK_SHOW = false;
         private static readonly int ITEMS_PER_PAGE = 12;
+        private static readonly float IDLE_TIME = 20f;
+        private static readonly float IDLE_SCREEN_COLOR_TRANSITION_TIME = 2f;
 
         public ResourceMonitorLogic ResourceMonitorLogic { get; private set; }
         private Dictionary<TechType, GameObject> trackedResourcesDisplayElements;
-        private int currentPage;
-        private int maxPage;
+        private int currentPage = 1;
+        private int maxPage = 1;
+        private float idlePeriodLength = IDLE_TIME;
+        private float timeSinceLastInteraction = 0f;
+        private bool isIdle = false;
+        private float nextColorTransitionCurrentTime;
+        private Color currentColor = POSSIBLE_IDLE_COLORS[0];
+        private Color nextColor = POSSIBLE_IDLE_COLORS[1];
+        private bool isHovered = false;
 
         private Animator animator;
         private GameObject canvasGameObject;
@@ -34,6 +54,8 @@ namespace ResourceMonitor.Components
         private GameObject nextPageGameObject;
         private GameObject pageCounterGameObject;
         private Text pageCounterText;
+        private GameObject idleScreen;
+        private Image idleScreenTitleBackgroundImage;
 
         public void Setup(ResourceMonitorLogic rml)
         {
@@ -46,25 +68,15 @@ namespace ResourceMonitor.Components
                 return;
             }
 
+            CalculateNewIdleTime();
             currentPage = 1;
             UpdatePaginator();
-
-            if (QUICK_SHOW == false)
-            {
-                StartCoroutine(FinalSetup());
-            }
-            else
-            {
-                welcomeScreen.SetActive(false);
-                blackCover.SetActive(false);
-                mainScreen.SetActive(true);
-                mainScreensCover.SetActive(false);
-                DrawPage(1);
-            }
+            StartCoroutine(FinalSetup());
         }
 
         private IEnumerator FinalSetup()
         {
+            animator.enabled = true;
             welcomeScreen.SetActive(false);
             blackCover.SetActive(false);
             mainScreen.SetActive(false);
@@ -78,6 +90,7 @@ namespace ResourceMonitor.Components
             welcomeScreen.SetActive(false);
             blackCover.SetActive(false);
             mainScreen.SetActive(true);
+            animator.enabled = false;
         }
 
         public void TurnDisplayOff()
@@ -180,16 +193,122 @@ namespace ResourceMonitor.Components
             trackedResourcesDisplayElements.Add(type, itemDisplay);
         }
 
+        public void Update()
+        {
+            if (isIdle == false && timeSinceLastInteraction < idlePeriodLength)
+            {
+                timeSinceLastInteraction += Time.deltaTime;
+            }
+
+            if (isIdle == false && timeSinceLastInteraction >= idlePeriodLength)
+            {
+                EnterIdleScreen();
+            }
+
+            if (isHovered == true)
+            {
+                ResetIdleTimer();
+            }
+
+            if (isIdle == true)
+            {
+                if (nextColorTransitionCurrentTime >= IDLE_SCREEN_COLOR_TRANSITION_TIME)
+                {
+                    nextColorTransitionCurrentTime = 0f;
+                    for (int i = 0; i < POSSIBLE_IDLE_COLORS.Length; i++)
+                    {
+                        if (POSSIBLE_IDLE_COLORS[i] == nextColor)
+                        {
+                            i++;
+                            currentColor = nextColor;
+                            if (i >= POSSIBLE_IDLE_COLORS.Length)
+                            {
+                                i = 0;
+                            }
+                            nextColor = POSSIBLE_IDLE_COLORS[i];
+                        }
+                    }
+                }
+
+                nextColorTransitionCurrentTime += Time.deltaTime;
+                idleScreenTitleBackgroundImage.color = Color.Lerp(currentColor, nextColor, nextColorTransitionCurrentTime / IDLE_SCREEN_COLOR_TRANSITION_TIME);
+            }
+        }
+
+        private bool InIdleInteractionRange()
+        {
+            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= MAX_INTERACTION_DISTANCE;
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (isIdle && InIdleInteractionRange())
+            {
+                ExitIdleScreen();
+            }
+            
+            if (isIdle == false)
+            {
+                ResetIdleTimer();
+            }
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (InIdleInteractionRange())
+            {
+                isHovered = true;
+            }
+
+            if (isIdle && InIdleInteractionRange())
+            {
+                ExitIdleScreen();
+            }
+
+            if (isIdle == false)
+            {
+                ResetIdleTimer();
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            isHovered = false;
+            if (isIdle && InIdleInteractionRange())
+            {
+                ExitIdleScreen();
+            }
+
+            if (isIdle == false)
+            {
+                ResetIdleTimer();
+            }
+        }
+
+        private void EnterIdleScreen()
+        {
+            isIdle = true;
+            mainScreen.SetActive(false);
+            idleScreen.SetActive(true);
+        }
+
+        private void ExitIdleScreen()
+        {
+            isIdle = false;
+            ResetIdleTimer();
+            CalculateNewIdleTime();
+            mainScreen.SetActive(true);
+            idleScreen.SetActive(false);
+        }
+        
+        private void CalculateNewIdleTime()
+        {
+            idlePeriodLength = IDLE_TIME + UnityEngine.Random.Range(0f, 10f);
+        }
+
+        public void ResetIdleTimer()
+        {
+            timeSinceLastInteraction = 0f;
         }
 
         private bool FindAllComponents()
@@ -295,6 +414,27 @@ namespace ResourceMonitor.Components
             if (pageCounterText == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen: Page Counter Text not found.");
+                return false;
+            }
+
+            idleScreen = screenHolder.FindChild("IdleScreen")?.gameObject;
+            if (idleScreen == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: IdleScreen not found.");
+                return false;
+            }
+
+            GameObject idleScreenTitleBackground = idleScreen.FindChild("AlterraTitleBackground")?.gameObject;
+            if (idleScreenTitleBackground == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: IdleScreen Background not found.");
+                return false;
+            }
+
+            idleScreenTitleBackgroundImage = idleScreenTitleBackground.GetComponent<Image>();
+            if (idleScreenTitleBackground == null)
+            {
+                System.Console.WriteLine("[ResourceMonitor] Screen: IdleScreen Background Image not found.");
                 return false;
             }
 

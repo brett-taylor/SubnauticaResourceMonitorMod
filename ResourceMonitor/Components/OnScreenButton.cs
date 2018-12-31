@@ -32,15 +32,19 @@ namespace ResourceMonitor.Components
             {
                 IsHovered = true;
             }
+
+            ResourceMonitorDisplay.ResetIdleTimer();
         }
 
         public virtual void OnPointerExit(PointerEventData eventData)
         {
             IsHovered = false;
+            ResourceMonitorDisplay.ResetIdleTimer();
         }
 
         public virtual void OnPointerClick(PointerEventData eventData)
         {
+            ResourceMonitorDisplay.ResetIdleTimer();
         }
 
         protected bool InInteractionRange()
