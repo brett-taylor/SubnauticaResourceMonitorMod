@@ -14,11 +14,11 @@ namespace ResourceMonitor.Components
     {
         public static readonly float MAX_INTERACTION_DISTANCE = 2.5f;
         private static readonly float WELCOME_ANIMATION_TIME = 8.5f;
-        private static readonly float MAIN_SCREEN_ANIMATION_TIME = 3f;
+        private static readonly float MAIN_SCREEN_ANIMATION_TIME = 1.2f;
         private static readonly bool QUICK_SHOW = false;
         private static readonly int ITEMS_PER_PAGE = 12;
 
-        private ResourceMonitorLogic rml;
+        public ResourceMonitorLogic ResourceMonitorLogic { get; private set; }
         private Dictionary<TechType, GameObject> trackedResourcesDisplayElements;
         private int currentPage;
         private int maxPage;
@@ -37,7 +37,7 @@ namespace ResourceMonitor.Components
 
         public void Setup(ResourceMonitorLogic rml)
         {
-            this.rml = rml;
+            ResourceMonitorLogic = rml;
             trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
 
             if (FindAllComponents() == false)
@@ -73,11 +73,11 @@ namespace ResourceMonitor.Components
             animator.Play("Welcome");
             yield return new WaitForSeconds(WELCOME_ANIMATION_TIME);
             animator.Play("ShowMainScreen");
+            DrawPage(1);
             yield return new WaitForSeconds(MAIN_SCREEN_ANIMATION_TIME);
             welcomeScreen.SetActive(false);
             blackCover.SetActive(false);
             mainScreen.SetActive(true);
-            DrawPage(1);
         }
 
         public void TurnDisplayOff()
@@ -101,7 +101,7 @@ namespace ResourceMonitor.Components
 
         private void CalculateNewMaxPages()
         {
-            maxPage = Mathf.CeilToInt((rml.TrackedResources.Count - 1) / ITEMS_PER_PAGE) + 1;
+            maxPage = Mathf.CeilToInt((ResourceMonitorLogic.TrackedResources.Count - 1) / ITEMS_PER_PAGE) + 1;
             if (currentPage > maxPage)
             {
                 currentPage = maxPage;
@@ -127,16 +127,16 @@ namespace ResourceMonitor.Components
 
             int startingPosition = (currentPage - 1) * ITEMS_PER_PAGE;
             int endingPosition = startingPosition + ITEMS_PER_PAGE;
-            if (endingPosition > rml.TrackedResources.Count)
+            if (endingPosition > ResourceMonitorLogic.TrackedResources.Count)
             {
-                endingPosition = rml.TrackedResources.Count;
+                endingPosition = ResourceMonitorLogic.TrackedResources.Count;
             }
 
             ClearPage();
             for (int i = startingPosition; i < endingPosition; i++)
             {
-                KeyValuePair<TechType, int> kvp = rml.TrackedResources.ElementAt(i);
-                CreateAndAddItemDisplay(kvp.Key, kvp.Value);
+                KeyValuePair<TechType, TrackedResource> kvp = ResourceMonitorLogic.TrackedResources.ElementAt(i);
+                CreateAndAddItemDisplay(kvp.Key, kvp.Value.Amount);
             }
 
             UpdatePaginator();
@@ -172,6 +172,7 @@ namespace ResourceMonitor.Components
             ItemButton itemButton = itemDisplay.AddComponent<ItemButton>();
             itemButton.Type = type;
             itemButton.Amount = amount;
+            itemButton.ResourceMonitorDisplay = this;
 
             uGUI_Icon icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
             icon.sprite = SpriteManager.Get(type);

@@ -26,15 +26,16 @@ namespace ResourceMonitor.Game_Items
 
         protected override TechData GetBlueprintRecipe()
         {
-            List<Ingredient> ingredients = new List<Ingredient>();
-            ingredients.Add(new Ingredient(TechType.Glass, 1));
-            ingredients.Add(new Ingredient(TechType.ComputerChip, 1));
-            ingredients.Add(new Ingredient(TechType.AdvancedWiringKit, 1));
-
-            TechData techData = new TechData();
-            techData.craftAmount = 1;
-            techData.Ingredients = ingredients;
-            return techData;
+            return new TechData()
+            {
+                craftAmount = 1,
+                Ingredients = new List<Ingredient>()
+                {
+                    new Ingredient(TechType.Glass, 1),
+                    new Ingredient(TechType.ComputerChip, 1),
+                    new Ingredient(TechType.AdvancedWiringKit, 1)
+                }
+            };
         }
     }
 }

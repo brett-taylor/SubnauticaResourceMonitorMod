@@ -1,9 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ResourceMonitor.Components
 {
+    /**
+     * Stores information about a resource. The type, amount and what storage containers contain this.
+     */
+    public class TrackedResource
+    {
+        public TechType TechType { get; set; }
+        public int Amount { get; set; }
+        public HashSet<StorageContainer> Containers { get; set; }
+    }
+
     /**
     * Component that contains all the logic related to the resource monitor component.
     * When set up: We find the base we was placed in. Get all StorageContainer components in that base gameobject children.
@@ -13,10 +24,13 @@ namespace ResourceMonitor.Components
     */
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
-        public SortedDictionary<TechType, int> TrackedResources { private set; get; } = new SortedDictionary<TechType, int>();
+        private static readonly float COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE = 1f;
+
+        public SortedDictionary<TechType, TrackedResource> TrackedResources { private set; get; } = new SortedDictionary<TechType, TrackedResource>();
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase;
         private bool isEnabled = false;
+        private float timerTillNextPickup = .0f;
 
         private IEnumerator Startup()
         {
@@ -31,7 +45,7 @@ namespace ResourceMonitor.Components
             }
 
             TrackExistingStorageContainers();
-            bool result = Patchers.StorageContainerAwakePatcher.AddEventHandlerIfMissing(AlertedNewStorageContainerPlaced);
+            Patchers.StorageContainerAwakePatcher.AddEventHandlerIfMissing(AlertedNewStorageContainerPlaced);
             TurnDisplayOn();
         }
 
@@ -127,39 +141,109 @@ namespace ResourceMonitor.Components
 
             foreach (var item in sc.container.GetItemTypes())
             {
-                AddItemsToTracker(item, sc.container.GetCount(item));
+                AddItemsToTracker(sc, item, sc.container.GetCount(item));
             }
 
-            sc.container.onAddItem += (item) => AddItemsToTracker(item.item.GetTechType());
-            sc.container.onRemoveItem += (item) => RemoveItemsFromTracker(item.item.GetTechType());
+            sc.container.onAddItem += (item) => AddItemsToTracker(sc, item.item.GetTechType());
+            sc.container.onRemoveItem += (item) => RemoveItemsFromTracker(sc, item.item.GetTechType());
         }
 
-        private void AddItemsToTracker(TechType item, int amountToAdd = 1)
+        private void AddItemsToTracker(StorageContainer sc, TechType item, int amountToAdd = 1)
         {
             if (TrackedResources.ContainsKey(item))
             {
-                TrackedResources[item] = TrackedResources[item] + amountToAdd;
+                TrackedResources[item].Amount = TrackedResources[item].Amount + amountToAdd;
+                TrackedResources[item].Containers.Add(sc);
             }
             else
             {
-                TrackedResources.Add(item, amountToAdd);
+                TrackedResources.Add(item, new TrackedResource()
+                {
+                    TechType = item,
+                    Amount = amountToAdd,
+                    Containers = new HashSet<StorageContainer>()
+                    {
+                        sc
+                    }
+                });
             }
 
-            rmd?.ItemModified(item, TrackedResources[item]);
+            rmd?.ItemModified(item, TrackedResources[item].Amount);
         }
 
-        private void RemoveItemsFromTracker(TechType item, int amountToRemove = 1)
+        private void RemoveItemsFromTracker(StorageContainer sc, TechType item, int amountToRemove = 1)
         {
             if (TrackedResources.ContainsKey(item))
             {
-                int newQuantity = TrackedResources[item] - amountToRemove;
-                TrackedResources[item] = newQuantity;
-                if (newQuantity <= 0)
+                TrackedResource trackedResource = TrackedResources[item];
+                int newAmount = trackedResource.Amount - amountToRemove;
+                trackedResource.Amount = newAmount;
+
+                if (newAmount <= 0)
                 {
                     TrackedResources.Remove(item);
                 }
+                else
+                {
+                    int amountLeftInContainer = sc.container.GetCount(item);
+                    if (amountLeftInContainer <= 0)
+                    {
+                        trackedResource.Containers.Remove(sc);
+                    }
+                }
 
-                rmd?.ItemModified(item, newQuantity);
+                rmd?.ItemModified(item, newAmount);
+            }
+        }
+
+        public void Update()
+        {
+            if (timerTillNextPickup > 0f)
+            {
+                timerTillNextPickup -= Time.deltaTime;
+            }
+        }
+
+        public void AttemptToTakeItem(TechType item)
+        {
+            if (timerTillNextPickup > 0f)
+            {
+                return;
+            }
+
+            if (TrackedResources.ContainsKey(item))
+            {
+                TrackedResource trackedResource = TrackedResources[item];
+                if (trackedResource.Containers.Count >= 1)
+                {
+                    StorageContainer sc = trackedResource.Containers.ElementAt(0);
+                    if (sc.container.Contains(item))
+                    {
+                        GameObject gameObject = CraftData.InstantiateFromPrefab(item, false);
+                        if (gameObject == null)
+                        {
+                            return;
+                        }
+
+                        gameObject.transform.position = MainCamera.camera.transform.position + MainCamera.camera.transform.forward * 3f;
+                        CrafterLogic.NotifyCraftEnd(gameObject, item);
+                        Pickupable pickup = gameObject.GetComponent<Pickupable>();
+                        if (pickup == null)
+                        {
+                            return;
+                        }
+
+                        bool addResult = Inventory.main.Pickup(pickup);
+                        if (addResult)
+                        {
+                            if (trackedResource.Amount == 1)
+                            {
+                                timerTillNextPickup = COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE;
+                            }
+                            sc.container.RemoveItem(item);
+                        }
+                    }
+                }   
             }
         }
     }

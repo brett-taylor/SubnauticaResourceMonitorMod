@@ -9,11 +9,20 @@ namespace ResourceMonitor.Components
      */
     public class ItemButton : OnScreenButton, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
+        private TechType type = TechType.None;
+        private int amount = 0;
+
         public TechType Type
         {
             set
             {
                 TextLineOne = TechTypeExtensions.Get(Language.main, value);
+                type = value;
+            }
+
+            get
+            {
+                return type;
             }
         }
 
@@ -22,6 +31,12 @@ namespace ResourceMonitor.Components
             set
             {
                 TextLineTwo = "x" + value;
+                amount = value;
+            }
+
+            get
+            {
+                return amount;
             }
         }
 
@@ -43,6 +58,10 @@ namespace ResourceMonitor.Components
         public override void OnPointerClick(PointerEventData eventData)
         {
             base.OnPointerClick(eventData);
+            if (IsHovered && ResourceMonitorDisplay != null && ResourceMonitorDisplay.ResourceMonitorLogic != null && type != TechType.None)
+            {
+                ResourceMonitorDisplay.ResourceMonitorLogic.AttemptToTakeItem(type);
+            }
         }
     }
 }
