@@ -8,7 +8,7 @@ namespace ResourceMonitor.Game_Items
     */
     public abstract class ResourceMonitorScreenGeneric : Buildable
     {
-        public override string AssetsFolder => EntryPoint.AssetsFolderLocation;
+        public override string AssetsFolder => EntryPoint.ASSETS_FOLDER_LOCATION;
         public override TechGroup GroupForPDA => TechGroup.InteriorModules;
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
 
@@ -18,7 +18,8 @@ namespace ResourceMonitor.Game_Items
 
         public override GameObject GetGameObject()
         {
-            GameObject screen = Object.Instantiate(EntryPoint.ResourceMonitorDisplayModel);
+            GameObject screen = Object.Instantiate(EntryPoint.RESOURCE_MONITOR_DISPLAY_MODEL);
+            GameObject screenModel = screen.transform.GetChild(0).gameObject;
 
             Shader shader = Shader.Find("MarmosetUBER");
             Renderer[] renderers = screen.GetComponentsInChildren<Renderer>();
@@ -36,16 +37,15 @@ namespace ResourceMonitor.Game_Items
             constructable.allowedInSub = true;
             constructable.allowedOnGround = false;
             constructable.allowedOutside = false;
-            constructable.model = screen.transform.GetChild(0).gameObject;
+            constructable.model = screenModel;
             constructable.techType = this.TechType;
 
             BoxCollider boxCollider = screen.GetComponent<BoxCollider>();
-            screen.AddComponent<ConstructableBounds>().bounds = new OrientedBounds(boxCollider.center, boxCollider.transform.rotation, new Vector3(boxCollider.size.x, boxCollider.size.y, 0f));
+            screen.AddComponent<ConstructableBounds>().bounds = new OrientedBounds(new Vector3(-0.1f, -0.1f, 0f), new Quaternion(0, 0, 0, 0), new Vector3(0.9f, 0.5f, 0f));
             screen.AddComponent<TechTag>().type = this.TechType;
-            screen.AddComponent<Components.ResourceMonitorLogic>();
             screen.AddComponent<PrefabIdentifier>().ClassId = ClassID;
             screen.AddComponent<VFXSurface>();
-            screen.AddComponent<LargeWorldEntity>().cellLevel = LargeWorldEntity.CellLevel.Near; // CHECK WHAT THIS DOES
+            screen.AddComponent<Components.ResourceMonitorLogic>();
             return screen;
         }
     }

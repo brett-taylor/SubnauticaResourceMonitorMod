@@ -12,17 +12,31 @@ namespace ResourceMonitor.Components
         protected bool IsHovered { get; set; }
         protected string TextLineOne { get; set; }
         protected string TextLineTwo { get; set; }
+        private bool isHoveredOutOfRange;
 
         public virtual void OnDisable()
         {
             IsHovered = false;
+            isHoveredOutOfRange = false;
         }
 
         public virtual void Update()
         {
-            if (IsHovered && InInteractionRange())
+            bool inInteractionRange = InInteractionRange();
+
+            if (IsHovered && inInteractionRange)
             {
                 HandReticle.main.SetInteractTextRaw(TextLineOne, TextLineTwo);
+            }
+
+            if (IsHovered && inInteractionRange == false)
+            {
+                IsHovered = false;
+            }
+
+            if (IsHovered == false && isHoveredOutOfRange && inInteractionRange)
+            {
+                IsHovered = true;
             }
         }
 
@@ -33,12 +47,14 @@ namespace ResourceMonitor.Components
                 IsHovered = true;
             }
 
+            isHoveredOutOfRange = true;
             ResourceMonitorDisplay.ResetIdleTimer();
         }
 
         public virtual void OnPointerExit(PointerEventData eventData)
         {
             IsHovered = false;
+            isHoveredOutOfRange = false;
             ResourceMonitorDisplay.ResetIdleTimer();
         }
 

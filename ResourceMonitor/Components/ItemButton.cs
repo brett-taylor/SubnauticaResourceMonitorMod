@@ -16,7 +16,7 @@ namespace ResourceMonitor.Components
         {
             set
             {
-                TextLineOne = TechTypeExtensions.Get(Language.main, value);
+                TextLineOne = "Take " + TechTypeExtensions.Get(Language.main, value);
                 type = value;
             }
 

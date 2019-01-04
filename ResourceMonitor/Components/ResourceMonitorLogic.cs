@@ -24,6 +24,7 @@ namespace ResourceMonitor.Components
     */
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
+        public static List<string> DONT_TRACK_GAMEOBJECTS { get; private set; } = new List<string>();
         private static readonly float COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE = 1f;
 
         public SortedDictionary<TechType, TrackedResource> TrackedResources { private set; get; } = new SortedDictionary<TechType, TrackedResource>();
@@ -139,6 +140,14 @@ namespace ResourceMonitor.Components
                 return;
             }
 
+            foreach (string notTrackedObject in DONT_TRACK_GAMEOBJECTS)
+            {
+                if (sc.gameObject.name.ToLower().Contains(notTrackedObject))
+                {
+                    return;
+                }
+            }
+
             foreach (var item in sc.container.GetItemTypes())
             {
                 AddItemsToTracker(sc, item, sc.container.GetCount(item));
@@ -214,33 +223,28 @@ namespace ResourceMonitor.Components
             if (TrackedResources.ContainsKey(item))
             {
                 TrackedResource trackedResource = TrackedResources[item];
+                int beforeRemoveAmount = trackedResource.Amount;
                 if (trackedResource.Containers.Count >= 1)
                 {
                     StorageContainer sc = trackedResource.Containers.ElementAt(0);
                     if (sc.container.Contains(item))
-                    {
-                        GameObject gameObject = CraftData.InstantiateFromPrefab(item, false);
-                        if (gameObject == null)
+                    {                    
+                        Pickupable pickup = sc.container.RemoveItem(item);
+                        if (pickup != null)
                         {
-                            return;
-                        }
-
-                        gameObject.transform.position = MainCamera.camera.transform.position + MainCamera.camera.transform.forward * 3f;
-                        CrafterLogic.NotifyCraftEnd(gameObject, item);
-                        Pickupable pickup = gameObject.GetComponent<Pickupable>();
-                        if (pickup == null)
-                        {
-                            return;
-                        }
-
-                        bool addResult = Inventory.main.Pickup(pickup);
-                        if (addResult)
-                        {
-                            if (trackedResource.Amount == 1)
+                            if (Inventory.main.Pickup(pickup))
                             {
-                                timerTillNextPickup = COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE;
+                                CrafterLogic.NotifyCraftEnd(Player.main.gameObject, item);
+                                if (beforeRemoveAmount == 1)
+                                {
+                                    timerTillNextPickup = COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE;
+                                }
                             }
-                            sc.container.RemoveItem(item);
+                            else
+                            {
+                                // If it fails to get added to the inventory lets add it back into the storage container.
+                                sc.container.AddItem(pickup);
+                            }
                         }
                     }
                 }   

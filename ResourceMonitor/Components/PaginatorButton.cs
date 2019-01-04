@@ -34,11 +34,11 @@ namespace ResourceMonitor.Components
 
         public override void OnDisable()
         {
-            base.OnDisable();
             if (text != null)
             {
                 text.color = STARTING_COLOR;
             }
+            base.OnDisable();
         }
 
         public override void OnPointerEnter(PointerEventData eventData)
