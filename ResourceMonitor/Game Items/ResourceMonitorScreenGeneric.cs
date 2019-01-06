@@ -8,7 +8,7 @@ namespace ResourceMonitor.Game_Items
     */
     public abstract class ResourceMonitorScreenGeneric : Buildable
     {
-        public override string AssetsFolder => EntryPoint.ASSETS_FOLDER_LOCATION;
+        public override string AssetsFolder => EntryPoint.QMODS_ASSETS_FOLDER_LOCATION;
         public override TechGroup GroupForPDA => TechGroup.InteriorModules;
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
 

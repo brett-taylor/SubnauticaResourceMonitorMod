@@ -28,6 +28,7 @@ namespace ResourceMonitor.Components
         private static readonly float COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE = 1f;
 
         public SortedDictionary<TechType, TrackedResource> TrackedResources { private set; get; } = new SortedDictionary<TechType, TrackedResource>();
+        public bool IsBeingDeleted { get; private set; } = false;
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase;
         private bool isEnabled = false;
@@ -35,7 +36,9 @@ namespace ResourceMonitor.Components
 
         private IEnumerator Startup()
         {
+            if (IsBeingDeleted == true) yield break;
             yield return new WaitForEndOfFrame();
+            if (IsBeingDeleted == true) yield break;
 
             seaBase = gameObject?.transform?.parent?.gameObject;
             if (seaBase == null)
@@ -47,17 +50,14 @@ namespace ResourceMonitor.Components
 
             TrackExistingStorageContainers();
             Patchers.StorageContainerAwakePatcher.AddEventHandlerIfMissing(AlertedNewStorageContainerPlaced);
+            Patchers.InGameMenuQuitPatcher.AddEventHandlerIfMissing(CleanUp);
             TurnDisplayOn();
-        }
-
-        public void OnDestroy()
-        {
-            Patchers.StorageContainerAwakePatcher.RemoveEventHandler(AlertedNewStorageContainerPlaced);
-            TrackedResources.Clear();
         }
 
         public void OnConstructedChanged(bool constructed)
         {
+            if (IsBeingDeleted == true) return;
+
             if (constructed)
             {
                 if (isEnabled == false)
@@ -87,6 +87,8 @@ namespace ResourceMonitor.Components
 
         private void TurnDisplayOn()
         {
+            if (IsBeingDeleted == true) return;
+
             if (rmd != null)
             {
                 TurnDisplayOff();
@@ -98,6 +100,8 @@ namespace ResourceMonitor.Components
 
         private void TurnDisplayOff()
         {
+            if (IsBeingDeleted == true) return;
+
             if (rmd != null)
             {
                 rmd.TurnDisplayOff();
@@ -159,6 +163,8 @@ namespace ResourceMonitor.Components
 
         private void AddItemsToTracker(StorageContainer sc, TechType item, int amountToAdd = 1)
         {
+            if (IsBeingDeleted == true) return;
+
             if (TrackedResources.ContainsKey(item))
             {
                 TrackedResources[item].Amount = TrackedResources[item].Amount + amountToAdd;
@@ -182,6 +188,8 @@ namespace ResourceMonitor.Components
 
         private void RemoveItemsFromTracker(StorageContainer sc, TechType item, int amountToRemove = 1)
         {
+            if (IsBeingDeleted == true) return;
+
             if (TrackedResources.ContainsKey(item))
             {
                 TrackedResource trackedResource = TrackedResources[item];
@@ -215,6 +223,8 @@ namespace ResourceMonitor.Components
 
         public void AttemptToTakeItem(TechType item)
         {
+            if (IsBeingDeleted == true) return;
+
             if (timerTillNextPickup > 0f)
             {
                 return;
@@ -248,6 +258,23 @@ namespace ResourceMonitor.Components
                         }
                     }
                 }   
+            }
+        }
+
+        public void OnApplicationQuit()
+        {
+            CleanUp();
+        }
+
+        public void CleanUp()
+        {
+            StopAllCoroutines();
+            IsBeingDeleted = true;
+            if (rmd != null)
+            {
+                rmd.StopAllCoroutines();
+                Destroy(rmd.CanvasGameObject);
+                Destroy(rmd);
             }
         }
     }

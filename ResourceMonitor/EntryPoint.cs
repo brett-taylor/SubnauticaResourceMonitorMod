@@ -11,6 +11,7 @@ namespace ResourceMonitor
     public class EntryPoint
     {
         public static readonly string MOD_FOLDER_LOCATION = "./QMods/ResourceMonitor/";
+        public static readonly string QMODS_ASSETS_FOLDER_LOCATION = "/ResourceMonitor/Assets/";
         public static readonly string ASSETS_FOLDER_LOCATION = MOD_FOLDER_LOCATION + "Assets/";
         public static readonly string ASSET_BUNDLE_LOCATION = ASSETS_FOLDER_LOCATION + "resources";
         public static readonly string SETTINGS_FILE_LOCATION = MOD_FOLDER_LOCATION + "DontTrackList.txt";

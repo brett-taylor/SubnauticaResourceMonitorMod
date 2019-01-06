@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -49,8 +48,8 @@ namespace ResourceMonitor.Components
         private bool isHovered = false;
         private bool isHoveredOutOfRange = false;
 
+        public GameObject CanvasGameObject { get; private set; }
         private Animator animator;
-        private GameObject canvasGameObject;
         private GameObject blackCover;
         private GameObject welcomeScreen;
         private GameObject mainScreen;
@@ -65,6 +64,8 @@ namespace ResourceMonitor.Components
 
         public void Setup(ResourceMonitorLogic rml)
         {
+            if (rml.IsBeingDeleted == true) return;
+
             ResourceMonitorLogic = rml;
             trackedResourcesDisplayElements = new Dictionary<TechType, GameObject>();
 
@@ -78,6 +79,7 @@ namespace ResourceMonitor.Components
             CalculateNewIdleTime();
             currentPage = 1;
             UpdatePaginator();
+
             StartCoroutine(FinalSetup());
         }
 
@@ -88,12 +90,23 @@ namespace ResourceMonitor.Components
             blackCover.SetActive(false);
             mainScreen.SetActive(false);
             animator.Play("Reset");
+
             yield return new WaitForEndOfFrame();
+            if (ResourceMonitorLogic.IsBeingDeleted == true) yield break;
+
             animator.Play("Welcome");
+
+            if (ResourceMonitorLogic.IsBeingDeleted == true) yield break;
             yield return new WaitForSeconds(WELCOME_ANIMATION_TIME);
+            if (ResourceMonitorLogic.IsBeingDeleted == true) yield break;
+
             animator.Play("ShowMainScreen");
             DrawPage(1);
+
+            if (ResourceMonitorLogic.IsBeingDeleted == true) yield break;
             yield return new WaitForSeconds(MAIN_SCREEN_ANIMATION_TIME);
+            if (ResourceMonitorLogic.IsBeingDeleted == true) yield break;
+
             welcomeScreen.SetActive(false);
             blackCover.SetActive(false);
             mainScreen.SetActive(true);
@@ -337,30 +350,35 @@ namespace ResourceMonitor.Components
             transitionIdleTime = IDLE_SCREEN_COLOR_TRANSITION_TIME + UnityEngine.Random.Range(IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_LOW_BOUND, IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_HIGH_BOUND);
         }
 
+        public void OnApplicationQuit()
+        {
+            StopAllCoroutines();
+        }
+
         private bool FindAllComponents()
         {
-            canvasGameObject = gameObject.GetComponentInChildren<Canvas>()?.gameObject;
-            if (canvasGameObject == null)
+            CanvasGameObject = gameObject.GetComponentInChildren<Canvas>()?.gameObject;
+            if (CanvasGameObject == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Canvas not found.");
                 return false;
             }
 
-            animator = canvasGameObject.GetComponent<Animator>();
+            animator = CanvasGameObject.GetComponent<Animator>();
             if (animator == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Animator not found.");
                 return false;
             }
 
-            blackCover = canvasGameObject.FindChild("BlackCover")?.gameObject;
+            blackCover = CanvasGameObject.FindChild("BlackCover")?.gameObject;
             if (blackCover == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] BlackCover not found.");
                 return false;
             }
 
-            GameObject screenHolder = canvasGameObject.transform.Find("Screens")?.gameObject;
+            GameObject screenHolder = CanvasGameObject.transform.Find("Screens")?.gameObject;
             if (screenHolder == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen Holder Gameobject not found.");

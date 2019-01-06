@@ -10,7 +10,7 @@ namespace ResourceMonitor.Components
     public class ItemButton : OnScreenButton, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         private TechType type = TechType.None;
-        private int amount = 0;
+        public int Amount { set; get; }
 
         public TechType Type
         {
@@ -23,20 +23,6 @@ namespace ResourceMonitor.Components
             get
             {
                 return type;
-            }
-        }
-
-        public int Amount
-        {
-            set
-            {
-                TextLineTwo = "x" + value;
-                amount = value;
-            }
-
-            get
-            {
-                return amount;
             }
         }
 

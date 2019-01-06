@@ -42,10 +42,5 @@ namespace ResourceMonitor.Patchers
                 return true;
             }
         }
-
-        public static void RemoveEventHandler(Action<StorageContainer> handler)
-        {
-            onStorageContainerAdded -= handler;
-        }
     }
 }

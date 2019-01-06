@@ -12,7 +12,7 @@ namespace ResourceMonitor.Game_Items
         public static readonly string CLASS_ID = "ResourceMonitorBuildableLarge";
         public static readonly string NICE_NAME = "Resource Monitor Screen Large";
         public static readonly string DESCRIPTION = "Track how many resources you have stored away in your sea base on one handy large screen.";
-        public static readonly Vector3 SCALE = new Vector3(2f, 2f, 1f);
+        public static readonly Vector3 SCALE = new Vector3(2.3f, 2.3f, 1f);
         public override string IconFileName => "ResourceMonitorLarge.png";
 
         public ResourceMonitorScreenLarge() : base(CLASS_ID, NICE_NAME, DESCRIPTION)
