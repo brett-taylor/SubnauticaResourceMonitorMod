@@ -165,6 +165,11 @@ namespace ResourceMonitor.Components
         {
             if (IsBeingDeleted == true) return;
 
+            if (DONT_TRACK_GAMEOBJECTS.Contains(item.AsString().ToLower()))
+            {
+                return;
+            }
+
             if (TrackedResources.ContainsKey(item))
             {
                 TrackedResources[item].Amount = TrackedResources[item].Amount + amountToAdd;

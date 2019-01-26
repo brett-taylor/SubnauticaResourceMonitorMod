@@ -52,10 +52,11 @@ namespace ResourceMonitor
                     {
                         if (string.IsNullOrEmpty(line) == false)
                         {
-                            Components.ResourceMonitorLogic.DONT_TRACK_GAMEOBJECTS.Add(line);
+                            Components.ResourceMonitorLogic.DONT_TRACK_GAMEOBJECTS.Add(line.ToLower());
                         }
                     }
                 }
+                Components.ResourceMonitorLogic.DONT_TRACK_GAMEOBJECTS.Sort();
             }
             else
             {
