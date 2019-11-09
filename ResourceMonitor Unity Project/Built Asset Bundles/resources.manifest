@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 344358545
+CRC: 742846742
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: a503e185ba493d89abd5df205d4c1378
+    Hash: 27ca4adf02bdb1b7fbe097e802a83b3d
   TypeTreeHash:
     serializedVersion: 2
-    Hash: cd706fa7e487f229c6b1a506387ac5ed
+    Hash: 5d4d3606f07345be2f65b7f1b9667aad
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -28,8 +28,6 @@ ClassTypes:
 - Class: 65
   Script: {instanceID: 0}
 - Class: 74
-  Script: {instanceID: 0}
-- Class: 90
   Script: {instanceID: 0}
 - Class: 91
   Script: {instanceID: 0}
@@ -77,11 +75,11 @@ Assets:
 - Assets/animations/DisabledScreen.controller
 - Assets/animations/Welcome.anim
 - Assets/animations/ShowMainScreen.anim
-- Assets/art/frame.blend
 - Assets/art/Material_001.mat
 - Assets/prefabs/ResourceMonitorModel.prefab
 - Assets/prefabs/ResourceMonitorDisplayUI.prefab
 - Assets/animations/Reset.anim
 - Assets/prefabs/ResourceItem.prefab
 - Assets/animations/Canvas.controller
+- Assets/art/frame.fbx
 Dependencies: []
