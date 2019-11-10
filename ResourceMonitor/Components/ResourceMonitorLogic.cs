@@ -25,14 +25,15 @@ namespace ResourceMonitor.Components
     public class ResourceMonitorLogic : MonoBehaviour, IConstructable
     {
         public static List<string> DONT_TRACK_GAMEOBJECTS { get; private set; } = new List<string>();
-        private static readonly float COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE = 1f;
+        private static readonly float COOLDOWN_TIME_BETWEEN_PICKING_UP_LAST_ITEM_TYPE = 0.7f;
 
         public SortedDictionary<TechType, TrackedResource> TrackedResources { private set; get; } = new SortedDictionary<TechType, TrackedResource>();
         public bool IsBeingDeleted { get; private set; } = false;
         private ResourceMonitorDisplay rmd;
         private GameObject seaBase;
-        private bool isEnabled = false;
         private float timerTillNextPickup = .0f;
+        private bool isEnabled = false;
+        private bool runStartUpOnEnable = false;
 
         private IEnumerator Startup()
         {
@@ -49,21 +50,37 @@ namespace ResourceMonitor.Components
             }
 
             TrackExistingStorageContainers();
-            Patchers.StorageContainerAwakePatcher.AddEventHandlerIfMissing(AlertedNewStorageContainerPlaced);
+            Patchers.StorageContainerAwakePatcher.RegisterForNewStorageContainerUpdates(this);
             Patchers.InGameMenuQuitPatcher.AddEventHandlerIfMissing(CleanUp);
             TurnDisplayOn();
         }
 
+        public void OnEnable()
+        {
+            if (runStartUpOnEnable)
+            {
+                StartCoroutine(Startup());
+                runStartUpOnEnable = false;
+            }
+        }
+
         public void OnConstructedChanged(bool constructed)
         {
-            if (IsBeingDeleted == true) return;
-
             if (constructed)
             {
                 if (isEnabled == false)
                 {
                     isEnabled = true;
-                    StartCoroutine(Startup());
+
+                    // Big Little Update Subnautica has caused this to be called when isActiveAndEnabled is false when loading a saved game.
+                    if (isActiveAndEnabled)
+                    {
+                        StartCoroutine(Startup());
+                    }
+                    else
+                    {
+                        runStartUpOnEnable = true;
+                    }
                 }
                 else
                 {
@@ -119,7 +136,7 @@ namespace ResourceMonitor.Components
             }
         }
 
-        private void AlertedNewStorageContainerPlaced(StorageContainer sc)
+        public void AlertNewStorageContainerPlaced(StorageContainer sc)
         {
             StartCoroutine("TrackNewStorageContainerCoroutine", sc);
         }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Harmony;
+using ResourceMonitor.Components;
 
 namespace ResourceMonitor.Patchers
 {
@@ -10,37 +12,30 @@ namespace ResourceMonitor.Patchers
     [HarmonyPatch("Awake")]
     public class StorageContainerAwakePatcher
     {
-        private static Action<StorageContainer> onStorageContainerAdded;
+        private static readonly List<ResourceMonitorLogic> registeredResourceMonitors = new List<ResourceMonitorLogic>();
 
         [HarmonyPostfix]
         public static void Postfix(StorageContainer __instance)
         {
-            if (onStorageContainerAdded != null)
+            if (__instance == null)
             {
-                onStorageContainerAdded.Invoke(__instance);
+                return;
+            }
+
+            foreach(ResourceMonitorLogic resourceMonitor in registeredResourceMonitors)
+            {
+                resourceMonitor.AlertNewStorageContainerPlaced(__instance);
             }
         }
 
-        public static bool AddEventHandlerIfMissing(Action<StorageContainer> newHandler)
+        public static void RegisterForNewStorageContainerUpdates(ResourceMonitorLogic resourceMonitor)
         {
-            if (onStorageContainerAdded == null)
-            {
-                onStorageContainerAdded += newHandler;
-                return true;
-            }
-            else
-            {
-                foreach (Action<StorageContainer> action in onStorageContainerAdded.GetInvocationList())
-                {
-                    if (action == newHandler)
-                    {
-                        return false;
-                    }
-                }
+            registeredResourceMonitors.Add(resourceMonitor);
+        }
 
-                onStorageContainerAdded += newHandler;
-                return true;
-            }
+        public static void ClearRegisteredResourceMonitors()
+        {
+            registeredResourceMonitors.Clear();
         }
     }
 }

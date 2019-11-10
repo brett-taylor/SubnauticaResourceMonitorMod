@@ -78,6 +78,7 @@
     <Compile Include="Components\PaginatorButton.cs" />
     <Compile Include="Game Items\ResourceMonitorScreenGeneric.cs" />
     <Compile Include="Patchers\InGameMenuQuitPatcher.cs" />
+    <Compile Include="Patchers\QuitGamePatcher.cs" />
     <Compile Include="Patchers\StorageContainerPatcher.cs" />
     <Compile Include="Game Items\ResourceMonitorScreenSmall.cs" />
     <Compile Include="Game Items\ResourceMonitorScreenLarge.cs" />
