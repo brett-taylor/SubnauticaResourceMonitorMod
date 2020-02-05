@@ -1,6 +1,7 @@
 ﻿using Harmony;
 using System.IO;
 using System.Reflection;
+using QModManager.API.ModLoading;
 using UnityEngine;
 
 namespace ResourceMonitor
@@ -8,6 +9,7 @@ namespace ResourceMonitor
     /**
      * Entry class.
      */
+    [QModCore]
     public class EntryPoint
     {
         public static readonly string MOD_FOLDER_LOCATION = "./QMods/ResourceMonitor/";
@@ -22,6 +24,7 @@ namespace ResourceMonitor
         /**
         * Entry method.
         */
+        [QModPatch]
         public static void Entry()
         {
             HarmonyInstance harmony = HarmonyInstance.Create("taylor.brett.ResourceMonitor.mod");
