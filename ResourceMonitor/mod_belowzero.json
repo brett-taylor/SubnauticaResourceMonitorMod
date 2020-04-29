@@ -1,0 +1,10 @@
+{
+  "Id": "ResourceMonitor",
+  "DisplayName": "Resource Monitor",
+  "Author": "WaisieMilliams",
+  "Version": "1.0.6",
+  "Dependencies": [ "SMLHelper" ],
+  "Enable": true,
+  "Game": "BelowZero",
+  "AssemblyName": "ResourceMonitor.dll"
+}

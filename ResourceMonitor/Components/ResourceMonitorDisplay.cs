@@ -15,36 +15,21 @@ namespace ResourceMonitor.Components
     */
     public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        public static readonly Color[] POSSIBLE_IDLE_COLORS =
-        {
-            new Color(0.07f, 0.38f, 0.70f), // BLUE
-            new Color(0.86f, 0.22f, 0.22f), // RED
-            new Color(0.22f, 0.86f, 0.22f) // GREEN
-        };
-
-        public static readonly float MAX_INTERACTION_DISTANCE = 2.5f;
-        public static readonly float MAX_INTERACTION_IDLE_PAGE_DISTANCE = 5f;
         private static readonly float WELCOME_ANIMATION_TIME = 8.5f;
         private static readonly float MAIN_SCREEN_ANIMATION_TIME = 1.2f;
         private static readonly int ITEMS_PER_PAGE = 12;
-        private static readonly float IDLE_TIME = 20f;
-        private static readonly float IDLE_TIME_RANDOMNESS_LOW_BOUND = 1f;
-        private static readonly float IDLE_TIME_RANDOMNESS_HIGH_BOUND = 10f;
-        private static readonly float IDLE_SCREEN_COLOR_TRANSITION_TIME = 2f;
-        private static readonly float IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_HIGH_BOUND = 2f;
-        private static readonly float IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_LOW_BOUND = 0f;
 
         public ResourceMonitorLogic ResourceMonitorLogic { get; private set; }
         private Dictionary<TechType, GameObject> trackedResourcesDisplayElements;
         private int currentPage = 1;
         private int maxPage = 1;
-        private float idlePeriodLength = IDLE_TIME;
+        private float idlePeriodLength = EntryPoint.SETTINGS.IdleTime;
         private float timeSinceLastInteraction = 0f;
         private bool isIdle = false;
         private float nextColorTransitionCurrentTime;
         private float transitionIdleTime;
-        private Color currentColor = POSSIBLE_IDLE_COLORS[0];
-        private Color nextColor = POSSIBLE_IDLE_COLORS[1];
+        private Color currentColor = EntryPoint.SETTINGS.PossibleIdleColors[0];
+        private Color nextColor = EntryPoint.SETTINGS.PossibleIdleColors[1];
         private bool isHovered = false;
         private bool isHoveredOutOfRange = false;
 
@@ -158,17 +143,17 @@ namespace ResourceMonitor.Components
                 currentPage = maxPage;
             }
 
-            int startingPosition = (currentPage - 1) * ITEMS_PER_PAGE;
-            int endingPosition = startingPosition + ITEMS_PER_PAGE;
+            var startingPosition = (currentPage - 1) * ITEMS_PER_PAGE;
+            var endingPosition = startingPosition + ITEMS_PER_PAGE;
             if (endingPosition > ResourceMonitorLogic.TrackedResources.Count)
             {
                 endingPosition = ResourceMonitorLogic.TrackedResources.Count;
             }
 
             ClearPage();
-            for (int i = startingPosition; i < endingPosition; i++)
+            for (var i = startingPosition; i < endingPosition; i++)
             {
-                KeyValuePair<TechType, TrackedResource> kvp = ResourceMonitorLogic.TrackedResources.ElementAt(i);
+                var kvp = ResourceMonitorLogic.TrackedResources.ElementAt(i);
                 CreateAndAddItemDisplay(kvp.Key, kvp.Value.Amount);
             }
 
@@ -178,7 +163,7 @@ namespace ResourceMonitor.Components
         private void UpdatePaginator()
         {
             CalculateNewMaxPages();
-            pageCounterText.text = string.Format("Page {0} Of {1}", currentPage, maxPage);
+            pageCounterText.text = $"Page {currentPage} Of {maxPage}";
             previousPageGameObject.SetActive(currentPage != 1);
             nextPageGameObject.SetActive(currentPage != maxPage);
         }
@@ -198,16 +183,16 @@ namespace ResourceMonitor.Components
 
         private void CreateAndAddItemDisplay(TechType type, int amount)
         {
-            GameObject itemDisplay = Instantiate(EntryPoint.RESOURCE_MONITOR_DISPLAY_ITEM_UI_PREFAB);
+            var itemDisplay = Instantiate(EntryPoint.RESOURCE_MONITOR_DISPLAY_ITEM_UI_PREFAB);
             itemDisplay.transform.SetParent(mainScreenItemGrid.transform, false);
             itemDisplay.GetComponentInChildren<Text>().text = "x" + amount;
 
-            ItemButton itemButton = itemDisplay.AddComponent<ItemButton>();
+            var itemButton = itemDisplay.AddComponent<ItemButton>();
             itemButton.Type = type;
             itemButton.Amount = amount;
             itemButton.ResourceMonitorDisplay = this;
 
-            uGUI_Icon icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
+            var icon = itemDisplay.transform.Find("ItemHolder").gameObject.AddComponent<uGUI_Icon>();
             icon.sprite = SpriteManager.Get(type);
 
             trackedResourcesDisplayElements.Add(type, itemDisplay);
@@ -220,7 +205,7 @@ namespace ResourceMonitor.Components
                 timeSinceLastInteraction += Time.deltaTime;
             }
 
-            if (isIdle == false && timeSinceLastInteraction >= idlePeriodLength)
+            if (EntryPoint.SETTINGS.EnableIdle && isIdle == false && timeSinceLastInteraction >= idlePeriodLength)
             {
                 EnterIdleScreen();
             }
@@ -241,17 +226,17 @@ namespace ResourceMonitor.Components
                 if (nextColorTransitionCurrentTime >= transitionIdleTime)
                 {
                     nextColorTransitionCurrentTime = 0f;
-                    for (int i = 0; i < POSSIBLE_IDLE_COLORS.Length; i++)
+                    for (int i = 0; i < EntryPoint.SETTINGS.PossibleIdleColors.Count; i++)
                     {
-                        if (POSSIBLE_IDLE_COLORS[i] == nextColor)
+                        if (EntryPoint.SETTINGS.PossibleIdleColors[i] == nextColor)
                         {
                             i++;
                             currentColor = nextColor;
-                            if (i >= POSSIBLE_IDLE_COLORS.Length)
+                            if (i >= EntryPoint.SETTINGS.PossibleIdleColors.Count)
                             {
                                 i = 0;
                             }
-                            nextColor = POSSIBLE_IDLE_COLORS[i];
+                            nextColor = EntryPoint.SETTINGS.PossibleIdleColors[i];
                             CalculateNewColourTransitionTime();
                         }
                     }
@@ -264,14 +249,9 @@ namespace ResourceMonitor.Components
 
         private bool InIdleInteractionRange()
         {
-            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= MAX_INTERACTION_IDLE_PAGE_DISTANCE;
+            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= EntryPoint.SETTINGS.MaxInteractionIdlePageDistance;
         }
-
-        private bool InInteractionRange()
-        {
-            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= MAX_INTERACTION_DISTANCE;
-        }
-
+        
         public void OnPointerClick(PointerEventData eventData)
         {
             if (isIdle && InIdleInteractionRange())
@@ -337,7 +317,7 @@ namespace ResourceMonitor.Components
         
         private void CalculateNewIdleTime()
         {
-            idlePeriodLength = IDLE_TIME + UnityEngine.Random.Range(IDLE_TIME_RANDOMNESS_LOW_BOUND, IDLE_TIME_RANDOMNESS_HIGH_BOUND);
+            idlePeriodLength = EntryPoint.SETTINGS.IdleTime + Random.Range(EntryPoint.SETTINGS.IdleTimeRandomnessLowBound, EntryPoint.SETTINGS.IdleTimeRandomnessHighBound);
         }
 
         public void ResetIdleTimer()
@@ -347,7 +327,7 @@ namespace ResourceMonitor.Components
 
         private void CalculateNewColourTransitionTime()
         {
-            transitionIdleTime = IDLE_SCREEN_COLOR_TRANSITION_TIME + UnityEngine.Random.Range(IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_LOW_BOUND, IDLE_SCREEN_COLOR_TRANSITION_RANDOMNESS_HIGH_BOUND);
+            transitionIdleTime = EntryPoint.SETTINGS.IdleScreenColorTransitionTime + Random.Range(EntryPoint.SETTINGS.IdleScreenColorTransitionRandomnessLowBound, EntryPoint.SETTINGS.IdleScreenColorTransitionRandomnessHighBound);
         }
 
         public void OnApplicationQuit()
@@ -378,7 +358,7 @@ namespace ResourceMonitor.Components
                 return false;
             }
 
-            GameObject screenHolder = CanvasGameObject.transform.Find("Screens")?.gameObject;
+            var screenHolder = CanvasGameObject.transform.Find("Screens")?.gameObject;
             if (screenHolder == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen Holder Gameobject not found.");
@@ -406,7 +386,7 @@ namespace ResourceMonitor.Components
                 return false;
             }
 
-            GameObject actualMainScreen = mainScreen.FindChild("ActualScreen")?.gameObject;
+            var actualMainScreen = mainScreen.FindChild("ActualScreen")?.gameObject;
             if (actualMainScreen == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen: Actual Main Screen not found.");
@@ -420,7 +400,7 @@ namespace ResourceMonitor.Components
                 return false;
             }
 
-            GameObject paginator = actualMainScreen.FindChild("Paginator")?.gameObject;
+            var paginator = actualMainScreen.FindChild("Paginator")?.gameObject;
             if (paginator == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen: Paginator not found.");
@@ -433,7 +413,8 @@ namespace ResourceMonitor.Components
                 System.Console.WriteLine("[ResourceMonitor] Screen: Previous Page GameObject not found.");
                 return false;
             }
-            PaginatorButton pb = previousPageGameObject.AddComponent<PaginatorButton>();
+            
+            var pb = previousPageGameObject.AddComponent<PaginatorButton>();
             pb.ResourceMonitorDisplay = this;
             pb.AmountToChangePageBy = -1;
 
@@ -443,7 +424,7 @@ namespace ResourceMonitor.Components
                 System.Console.WriteLine("[ResourceMonitor] Screen: Next Page GameObject not found.");
                 return false;
             }
-            PaginatorButton pb2 = nextPageGameObject.AddComponent<PaginatorButton>();
+            var pb2 = nextPageGameObject.AddComponent<PaginatorButton>();
             pb2.ResourceMonitorDisplay = this;
             pb2.AmountToChangePageBy = 1;
 
@@ -468,7 +449,7 @@ namespace ResourceMonitor.Components
                 return false;
             }
 
-            GameObject idleScreenTitleBackground = idleScreen.FindChild("AlterraTitleBackground")?.gameObject;
+            var idleScreenTitleBackground = idleScreen.FindChild("AlterraTitleBackground")?.gameObject;
             if (idleScreenTitleBackground == null)
             {
                 System.Console.WriteLine("[ResourceMonitor] Screen: IdleScreen Background not found.");

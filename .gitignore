@@ -345,3 +345,5 @@ healthchecksdb
 # =============== #
 ResourceMonitor Unity Project/Temp/
 ResourceMonitor Unity Project/Library/
+
+.vs/**

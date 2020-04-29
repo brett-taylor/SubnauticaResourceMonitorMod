@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 742846742
+CRC: 2424122012
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 27ca4adf02bdb1b7fbe097e802a83b3d
+    Hash: 8aba5f5924c647a57a3afc81e74a7119
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 5d4d3606f07345be2f65b7f1b9667aad
+    Hash: cc5f3da85b3af1cf32f82c357a769c7f
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -29,36 +29,32 @@ ClassTypes:
   Script: {instanceID: 0}
 - Class: 74
   Script: {instanceID: 0}
+- Class: 90
+  Script: {instanceID: 0}
 - Class: 91
   Script: {instanceID: 0}
 - Class: 95
   Script: {instanceID: 0}
 - Class: 114
-  Script: {fileID: 1327945023, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
 - Class: 114
-  Script: {fileID: 1980459831, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
 - Class: 114
-  Script: {fileID: -619905303, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
 - Class: 114
-  Script: {fileID: 1301386320, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
 - Class: 114
-  Script: {fileID: -2095666955, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
 - Class: 114
-  Script: {fileID: -765806418, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
 - Class: 114
-  Script: {fileID: -900027084, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
 - Class: 114
-  Script: {fileID: 1077351063, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: 1511ccae7919cfc46b603b9b337fdc94, type: 3}
 - Class: 114
-  Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
 - Class: 114
-  Script: {fileID: -2095666955, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
-- Class: 114
-  Script: {fileID: -765806418, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
-- Class: 114
-  Script: {fileID: -98529514, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
-- Class: 114
-  Script: {fileID: 708705254, guid: f5f67c52d1564df4a8936ccd202a3bd8, type: 3}
+  Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
 - Class: 115
   Script: {instanceID: 0}
 - Class: 128
@@ -73,8 +69,10 @@ ClassTypes:
   Script: {instanceID: 0}
 Assets:
 - Assets/animations/DisabledScreen.controller
+- Assets/art/Materials/frame_albedo_enhanced.mat
 - Assets/animations/Welcome.anim
 - Assets/animations/ShowMainScreen.anim
+- Assets/art/frame.blend
 - Assets/art/Material_001.mat
 - Assets/prefabs/ResourceMonitorModel.prefab
 - Assets/prefabs/ResourceMonitorDisplayUI.prefab

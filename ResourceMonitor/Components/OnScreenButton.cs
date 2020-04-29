@@ -10,8 +10,7 @@ namespace ResourceMonitor.Components
     {
         public ResourceMonitorDisplay ResourceMonitorDisplay { get; set; }
         protected bool IsHovered { get; set; }
-        protected string TextLineOne { get; set; }
-        protected string TextLineTwo { get; set; }
+        protected string HoverText { get; set; }
         private bool isHoveredOutOfRange;
 
         public virtual void OnDisable()
@@ -22,11 +21,15 @@ namespace ResourceMonitor.Components
 
         public virtual void Update()
         {
-            bool inInteractionRange = InInteractionRange();
+            var inInteractionRange = InInteractionRange();
 
             if (IsHovered && inInteractionRange)
             {
-                HandReticle.main.SetInteractTextRaw(TextLineOne, TextLineTwo);
+#if SUBNAUTICA
+                HandReticle.main.SetInteractTextRaw(HoverText, "");
+#elif BELOWZERO
+                HandReticle.main.SetTextRaw(HandReticle.TextType.Hand, HoverText);
+#endif
             }
 
             if (IsHovered && inInteractionRange == false)
@@ -65,7 +68,7 @@ namespace ResourceMonitor.Components
 
         protected bool InInteractionRange()
         {
-            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= ResourceMonitorDisplay.MAX_INTERACTION_DISTANCE;
+            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= EntryPoint.SETTINGS.MaxInteractionDistance;
         }
     }
 }

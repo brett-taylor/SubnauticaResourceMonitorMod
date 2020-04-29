@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using SMLHelper.V2.Crafting;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ResourceMonitor.Game_Items
 {
@@ -20,22 +18,10 @@ namespace ResourceMonitor.Game_Items
 
         public override GameObject GetGameObject()
         {
-            GameObject screen = base.GetGameObject();
+            var screen = base.GetGameObject();
             return screen;
         }
 
-        protected override TechData GetBlueprintRecipe()
-        {
-            return new TechData()
-            {
-                craftAmount = 1,
-                Ingredients = new List<Ingredient>()
-                {
-                    new Ingredient(TechType.Glass, 1),
-                    new Ingredient(TechType.ComputerChip, 1),
-                    new Ingredient(TechType.AdvancedWiringKit, 1)
-                }
-            };
-        }
+        protected override int GetNumberOfIngredientsRequired() => 1;
     }
 }
