@@ -51,6 +51,24 @@ namespace ResourceMonitor.Game_Items
 
         protected abstract int GetNumberOfIngredientsRequired();
         
+#if SUBNAUTICA
+        
+        protected override SMLHelper.V2.Crafting.TechData GetBlueprintRecipe()
+        {
+            return new SMLHelper.V2.Crafting.TechData()
+            {
+                craftAmount = 1,
+                Ingredients = new List<SMLHelper.V2.Crafting.Ingredient>()
+                {
+                    new SMLHelper.V2.Crafting.Ingredient(TechType.Glass, GetNumberOfIngredientsRequired()),
+                    new SMLHelper.V2.Crafting.Ingredient(TechType.ComputerChip, GetNumberOfIngredientsRequired()),
+                    new SMLHelper.V2.Crafting.Ingredient(TechType.AdvancedWiringKit, GetNumberOfIngredientsRequired())
+                }
+            };
+        }
+        
+#elif BELOWZERO
+
         protected override SMLHelper.V2.Crafting.RecipeData GetBlueprintRecipe()
         {
             return new SMLHelper.V2.Crafting.RecipeData()
@@ -64,5 +82,7 @@ namespace ResourceMonitor.Game_Items
                 }
             };
         }
+        
+#endif
     }
 }
