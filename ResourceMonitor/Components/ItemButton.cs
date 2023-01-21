@@ -16,14 +16,14 @@ namespace ResourceMonitor.Components
         private void Awake()
         {
             rawImage = GetComponent<RawImage>();
-            rawImage.color = EntryPoint.SETTINGS.ItemButtonBackgroundColor;
+            rawImage.color = Plugin.ItemButtonBackgroundColor.Value;
         }
 
         public TechType Type
         {
             set
             {
-                if (EntryPoint.SETTINGS.AllowSelectingItemsFromMonitor)
+                if (Plugin.AllowSelectingItemsFromMonitor.Value)
                     HoverText = "Take " + Language.main.Get(value);
                 else
                     HoverText = Language.main.Get(value);
@@ -35,7 +35,7 @@ namespace ResourceMonitor.Components
         public override void OnPointerClick(PointerEventData eventData)
         {
             base.OnPointerClick(eventData);
-            if (EntryPoint.SETTINGS.AllowSelectingItemsFromMonitor && IsHovered && ResourceMonitorDisplay != null && ResourceMonitorDisplay.ResourceMonitorLogic != null && type != TechType.None)
+            if (Plugin.AllowSelectingItemsFromMonitor.Value && IsHovered && ResourceMonitorDisplay != null && ResourceMonitorDisplay.ResourceMonitorLogic != null && type != TechType.None)
             {
                 ResourceMonitorDisplay.ResourceMonitorLogic.AttemptToTakeItem(type);
             }
@@ -46,14 +46,14 @@ namespace ResourceMonitor.Components
             base.OnPointerEnter(eventData);
             if (IsHovered)
             {
-                rawImage.color = EntryPoint.SETTINGS.ItemButtonHoverColor;
+                rawImage.color = Plugin.ItemButtonHoverColor.Value;
             }
         }
 
         public override void OnPointerExit(PointerEventData eventData)
         {
             base.OnPointerExit(eventData);
-            rawImage.color = EntryPoint.SETTINGS.ItemButtonBackgroundColor;
+            rawImage.color = Plugin.ItemButtonBackgroundColor.Value;
         }
     }
 }

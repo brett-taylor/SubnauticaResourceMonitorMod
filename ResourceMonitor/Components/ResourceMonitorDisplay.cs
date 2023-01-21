@@ -15,21 +15,28 @@ namespace ResourceMonitor.Components
     */
     public class ResourceMonitorDisplay : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        public static List<Color> PossibleIdleColors = new List<Color>()
+        {
+            new Color(0.07f, 0.38f, 0.70f), // BLUE
+            new Color(0.86f, 0.22f, 0.22f), // RED
+            new Color(0.22f, 0.86f, 0.22f) // GREEN
+        };
+
         private static readonly float WELCOME_ANIMATION_TIME = 8.5f;
         private static readonly float MAIN_SCREEN_ANIMATION_TIME = 1.2f;
         private static readonly int ITEMS_PER_PAGE = 12;
 
         public ResourceMonitorLogic ResourceMonitorLogic { get; private set; }
         private Dictionary<TechType, GameObject> trackedResourcesDisplayElements;
-        private int currentPage = 1;
-        private int maxPage = 1;
-        private float idlePeriodLength = EntryPoint.SETTINGS.IdleTime;
+        public int currentPage = 1;
+        public int maxPage = 1;
+        private float idlePeriodLength = Plugin.IdleTime.Value;
         private float timeSinceLastInteraction = 0f;
         private bool isIdle = false;
         private float nextColorTransitionCurrentTime;
         private float transitionIdleTime;
-        private Color currentColor = EntryPoint.SETTINGS.PossibleIdleColors[0];
-        private Color nextColor = EntryPoint.SETTINGS.PossibleIdleColors[1];
+        private Color currentColor = PossibleIdleColors[0];
+        private Color nextColor = PossibleIdleColors[1];
         private bool isHovered = false;
         private bool isHoveredOutOfRange = false;
 
@@ -183,7 +190,7 @@ namespace ResourceMonitor.Components
 
         private void CreateAndAddItemDisplay(TechType type, int amount)
         {
-            var itemDisplay = Instantiate(EntryPoint.RESOURCE_MONITOR_DISPLAY_ITEM_UI_PREFAB);
+            var itemDisplay = Instantiate(Plugin.RESOURCE_MONITOR_DISPLAY_ITEM_UI_PREFAB);
             itemDisplay.transform.SetParent(mainScreenItemGrid.transform, false);
             itemDisplay.GetComponentInChildren<Text>().text = "x" + amount;
 
@@ -205,7 +212,7 @@ namespace ResourceMonitor.Components
                 timeSinceLastInteraction += Time.deltaTime;
             }
 
-            if (EntryPoint.SETTINGS.EnableIdle && isIdle == false && timeSinceLastInteraction >= idlePeriodLength)
+            if (Plugin.EnableIdle.Value && isIdle == false && timeSinceLastInteraction >= idlePeriodLength)
             {
                 EnterIdleScreen();
             }
@@ -226,17 +233,17 @@ namespace ResourceMonitor.Components
                 if (nextColorTransitionCurrentTime >= transitionIdleTime)
                 {
                     nextColorTransitionCurrentTime = 0f;
-                    for (int i = 0; i < EntryPoint.SETTINGS.PossibleIdleColors.Count; i++)
+                    for (int i = 0; i < PossibleIdleColors.Count; i++)
                     {
-                        if (EntryPoint.SETTINGS.PossibleIdleColors[i] == nextColor)
+                        if (PossibleIdleColors[i] == nextColor)
                         {
                             i++;
                             currentColor = nextColor;
-                            if (i >= EntryPoint.SETTINGS.PossibleIdleColors.Count)
+                            if (i >= PossibleIdleColors.Count)
                             {
                                 i = 0;
                             }
-                            nextColor = EntryPoint.SETTINGS.PossibleIdleColors[i];
+                            nextColor = PossibleIdleColors[i];
                             CalculateNewColourTransitionTime();
                         }
                     }
@@ -249,7 +256,7 @@ namespace ResourceMonitor.Components
 
         private bool InIdleInteractionRange()
         {
-            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= EntryPoint.SETTINGS.MaxInteractionIdlePageDistance;
+            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= Plugin.MaxInteractionIdlePageDistance.Value;
         }
         
         public void OnPointerClick(PointerEventData eventData)
@@ -317,7 +324,7 @@ namespace ResourceMonitor.Components
         
         private void CalculateNewIdleTime()
         {
-            idlePeriodLength = EntryPoint.SETTINGS.IdleTime + Random.Range(EntryPoint.SETTINGS.IdleTimeRandomnessLowBound, EntryPoint.SETTINGS.IdleTimeRandomnessHighBound);
+            idlePeriodLength = Plugin.IdleTime.Value + Random.Range(Plugin.IdleTimeRandomnessLowBound.Value, Plugin.IdleTimeRandomnessHighBound.Value);
         }
 
         public void ResetIdleTimer()
@@ -327,7 +334,7 @@ namespace ResourceMonitor.Components
 
         private void CalculateNewColourTransitionTime()
         {
-            transitionIdleTime = EntryPoint.SETTINGS.IdleScreenColorTransitionTime + Random.Range(EntryPoint.SETTINGS.IdleScreenColorTransitionRandomnessLowBound, EntryPoint.SETTINGS.IdleScreenColorTransitionRandomnessHighBound);
+            transitionIdleTime = Plugin.IdleScreenColorTransitionTime.Value + Random.Range(Plugin.IdleScreenColorTransitionRandomnessLowBound.Value, Plugin.IdleScreenColorTransitionRandomnessHighBound.Value);
         }
 
         public void OnApplicationQuit()

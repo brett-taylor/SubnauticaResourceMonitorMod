@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using SMLHelper.V2.Utility;
+using System.IO;
+using UnityEngine;
 
 namespace ResourceMonitor.Game_Items
 {
@@ -23,5 +25,10 @@ namespace ResourceMonitor.Game_Items
         }
 
         protected override int GetNumberOfIngredientsRequired() => 1;
+
+        protected override Atlas.Sprite GetItemSprite()
+        {
+            return ImageUtils.LoadSpriteFromFile(Path.Combine(Plugin.ASSETS_FOLDER_LOCATION, "ResourceMonitorSmall.png"));
+        }
     }
 }

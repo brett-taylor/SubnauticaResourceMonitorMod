@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using SMLHelper.V2.Assets;
+using SMLHelper.V2.Crafting;
 using UnityEngine;
 
 namespace ResourceMonitor.Game_Items
@@ -9,7 +10,7 @@ namespace ResourceMonitor.Game_Items
     */
     public abstract class ResourceMonitorScreenGeneric : Buildable
     {
-        public override string AssetsFolder => EntryPoint.QMODS_ASSETS_FOLDER_LOCATION;
+        public override string AssetsFolder => Plugin.ASSETS_FOLDER_LOCATION;
         public override TechGroup GroupForPDA => TechGroup.InteriorModules;
         public override TechCategory CategoryForPDA => TechCategory.InteriorModule;
 
@@ -19,7 +20,7 @@ namespace ResourceMonitor.Game_Items
 
         public override GameObject GetGameObject()
         {
-            var screen = Object.Instantiate(EntryPoint.RESOURCE_MONITOR_DISPLAY_MODEL);
+            var screen = Object.Instantiate(Plugin.RESOURCE_MONITOR_DISPLAY_MODEL);
             var screenModel = screen.transform.GetChild(0).gameObject;
 
             var shader = Shader.Find("MarmosetUBER");
@@ -69,9 +70,9 @@ namespace ResourceMonitor.Game_Items
         
 #elif BELOWZERO
 
-        protected override SMLHelper.V2.Crafting.RecipeData GetBlueprintRecipe()
+        protected override SMLHelper.V2.Crafting.ModCraftTreeCraft GetBlueprintRecipe()
         {
-            return new SMLHelper.V2.Crafting.RecipeData()
+            return new SMLHelper.V2.Crafting.
             {
                 craftAmount = 1,
                 Ingredients = new List<Ingredient>()
