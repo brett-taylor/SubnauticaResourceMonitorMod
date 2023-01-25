@@ -9,7 +9,7 @@ namespace ResourceMonitor.Components
      */
     public class PaginatorButton : OnScreenButton, IPointerEnterHandler, IPointerClickHandler, IPointerExitHandler
     {
-        public int AmountToChangePageBy { get; set; } = 1;
+        public int AmountToChangePageBy = 1;
         private Text text;
 
         public void Start()
@@ -22,7 +22,7 @@ namespace ResourceMonitor.Components
         {
             if (text != null)
             {
-                text.color = EntryPoint.SETTINGS.PaginatorStartingColor;
+                text.color = Plugin.PaginatorStartingColor.Value;
             }
         }
 
@@ -30,7 +30,7 @@ namespace ResourceMonitor.Components
         {
             if (text != null)
             {
-                text.color = EntryPoint.SETTINGS.PaginatorStartingColor;
+                text.color = Plugin.PaginatorStartingColor.Value;
             }
             base.OnDisable();
         }
@@ -40,14 +40,14 @@ namespace ResourceMonitor.Components
             base.OnPointerEnter(eventData);
             if (IsHovered)
             {
-                text.color = EntryPoint.SETTINGS.PaginatorHoverColor;
+                text.color = Plugin.PaginatorHoverColor.Value;
             }
         }
 
         public override void OnPointerExit(PointerEventData eventData)
         {
             base.OnPointerExit(eventData);
-            text.color = EntryPoint.SETTINGS.PaginatorStartingColor;
+            text.color = Plugin.PaginatorStartingColor.Value;
         }
 
         public override void OnPointerClick(PointerEventData eventData)

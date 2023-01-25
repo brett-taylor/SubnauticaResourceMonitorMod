@@ -266,6 +266,7 @@ namespace ResourceMonitor.Components
                         {
                             if (Inventory.main.Pickup(pickup))
                             {
+                                //to-do: implement a fix for the free battery bug here (picking tools without battery gives it a extra one out of thin air)
                                 CrafterLogic.NotifyCraftEnd(Player.main.gameObject, item);
                                 if (beforeRemoveAmount == 1)
                                 {
@@ -298,6 +299,11 @@ namespace ResourceMonitor.Components
                 Destroy(rmd.CanvasGameObject);
                 Destroy(rmd);
             }
+        }
+
+        public bool IsDeconstructionObstacle()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

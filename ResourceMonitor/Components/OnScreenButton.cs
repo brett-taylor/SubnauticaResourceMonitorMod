@@ -9,9 +9,9 @@ namespace ResourceMonitor.Components
     public abstract class OnScreenButton : MonoBehaviour
     {
         public ResourceMonitorDisplay ResourceMonitorDisplay { get; set; }
-        protected bool IsHovered { get; set; }
-        protected string HoverText { get; set; }
-        private bool isHoveredOutOfRange;
+        protected bool IsHovered;
+        protected string HoverText;
+        public bool isHoveredOutOfRange;
 
         public virtual void OnDisable()
         {
@@ -21,15 +21,11 @@ namespace ResourceMonitor.Components
 
         public virtual void Update()
         {
-            var inInteractionRange = InInteractionRange();
+            bool inInteractionRange = InInteractionRange();
 
             if (IsHovered && inInteractionRange)
             {
-#if SUBNAUTICA
-                HandReticle.main.SetInteractTextRaw(HoverText, "");
-#elif BELOWZERO
                 HandReticle.main.SetTextRaw(HandReticle.TextType.Hand, HoverText);
-#endif
             }
 
             if (IsHovered && inInteractionRange == false)
@@ -37,7 +33,7 @@ namespace ResourceMonitor.Components
                 IsHovered = false;
             }
 
-            if (IsHovered == false && isHoveredOutOfRange && inInteractionRange)
+            if (IsHovered == false && isHoveredOutOfRange && inInteractionRange == true)
             {
                 IsHovered = true;
             }
@@ -65,10 +61,15 @@ namespace ResourceMonitor.Components
         {
             ResourceMonitorDisplay.ResetIdleTimer();
         }
-
+        /*
         protected bool InInteractionRange()
         {
-            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= EntryPoint.SETTINGS.MaxInteractionDistance;
+            return Mathf.Abs(Vector3.Distance(gameObject.transform.position, Player.main.transform.position)) <= Plugin.MaxInteractionDistance.Value;
+        }
+        */
+        protected bool InInteractionRange()
+        {
+            return Mathf.Abs(Vector3.Distance(base.gameObject.transform.position, Player.main?.transform.position ?? base.gameObject.transform.position)) <= 2.5f;
         }
     }
 }

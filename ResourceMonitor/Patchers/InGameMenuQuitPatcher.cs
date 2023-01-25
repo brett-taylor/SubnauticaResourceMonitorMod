@@ -1,5 +1,6 @@
 ﻿using System;
-using Harmony;
+using System.Linq;
+using HarmonyLib;
 
 namespace ResourceMonitor.Patchers
 {
@@ -32,7 +33,7 @@ namespace ResourceMonitor.Patchers
             }
             else
             {
-                foreach (Action action in onQuitButtonPressed.GetInvocationList())
+                foreach (Action action in onQuitButtonPressed.GetInvocationList().Cast<Action>())
                 {
                     if (action == newHandler)
                     {
